@@ -3,6 +3,13 @@
 import { useState } from "react";
 import type { AgentProposal } from "@/lib/ai/agent-engine";
 import type { ExecutionResult } from "@/lib/ai/executor";
+import {
+  StellarWalletsKit,
+  Networks,
+} from "@creit.tech/stellar-wallets-kit";
+import { FreighterModule } from "@creit.tech/stellar-wallets-kit/modules/freighter";
+import { xBullModule } from "@creit.tech/stellar-wallets-kit/modules/xbull";
+import { AlbedoModule } from "@creit.tech/stellar-wallets-kit/modules/albedo";
 
 const BUCKET_ICONS: Record<string, string> = {
   bills: "📄", family: "👨‍👩‍👧", savings: "🏦", income: "💼",
@@ -41,16 +48,22 @@ export default function AgentDecisionPanel({ decisionId, proposal, onExecuted, o
 
       let txHash = "";
 
-      // 2. If Freighter is installed, ask user to sign
-      const freighterApi = await import("@stellar/freighter-api");
-      if (await freighterApi.isConnected()) {
-        const signResult = await freighterApi.signTransaction(xdr, { 
+      // 2. Ask user to sign via StellarWalletsKit
+      try {
+        // Ensure kit is initialized in case of page refresh
+        try {
+          StellarWalletsKit.init({
+            network: Networks.TESTNET,
+            selectedWalletId: "freighter", // default fallback, kit usually caches the selection
+            modules: [new FreighterModule(), new xBullModule(), new AlbedoModule()],
+          });
+        } catch (e) {
+          // ignore if already initialized
+        }
+
+        const signResult = await StellarWalletsKit.signTransaction(xdr, { 
           networkPassphrase: "Test SDF Network ; September 2015" 
         });
-        
-        if (signResult.error) {
-          throw new Error("Freighter signing failed: " + signResult.error);
-        }
 
         // 3. Submit to Stellar testnet
         const submitRes = await fetch("https://horizon-testnet.stellar.org/transactions", {
@@ -61,9 +74,9 @@ export default function AgentDecisionPanel({ decisionId, proposal, onExecuted, o
         const submitData = await submitRes.json();
         if (!submitRes.ok) throw new Error("Stellar submission failed: " + (submitData.detail || "Unknown error"));
         txHash = submitData.hash;
-      } else {
-        // Fallback for non-Freighter users in demo: fake the execution
-        console.warn("Freighter not connected, skipping real stellar submission for demo");
+      } catch (err) {
+        console.warn("Wallet signing failed or cancelled:", err);
+        throw new Error("Wallet signing failed: " + ((err as Error).message || "Unknown error"));
       }
 
       // 4. Mark executed in DB
