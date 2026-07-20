@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import {
   getAccountBalances,
   sendPayment,
@@ -41,41 +42,53 @@ export default function AdminPage() {
   const [history, setHistory] = useState<PaymentHistoryItem[]>([]);
 
   useEffect(() => {
-    // Fetch master wallet from API
-    fetch("/api/admin/wallet", {
-      headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}` }
-    })
-      .then(r => r.json())
-      .then(d => {
-        if (d.exists) {
-          setMasterSecret(d.secretKey);
-          setMasterPublic(d.publicKey);
-          getAccountBalances(d.publicKey).then(acc => {
-            if (acc) setBalances(acc.balances);
-          });
-          // Fetch history
-          fetch("/api/admin/history", {
-            headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}` }
-          }).then(r => r.json()).then(hd => setHistory(hd.history || []));
-        }
-      });
+    const init = async () => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
 
-    fetch("/api/admin/users")
-      .then(r => r.json())
-      .then(d => {
-        if (d.users) setUsers(d.users);
-        setLoading(false);
-      });
+      // Fetch master wallet from API
+      fetch("/api/admin/wallet", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.exists) {
+            setMasterSecret(d.secretKey);
+            setMasterPublic(d.publicKey);
+            getAccountBalances(d.publicKey).then(acc => {
+              if (acc) setBalances(acc.balances);
+            });
+            // Fetch history
+            fetch("/api/admin/history", {
+              headers: { Authorization: `Bearer ${token}` }
+            }).then(r => r.json()).then(hd => setHistory(hd.history || []));
+          }
+        });
+
+      fetch("/api/admin/users")
+        .then(r => r.json())
+        .then(d => {
+          if (d.users) setUsers(d.users);
+          setLoading(false);
+        });
+    };
+
+    init();
   }, []);
 
   const handleGenerateAndFund = async () => {
     setFunding(true);
     try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
+
       const res = await fetch("/api/admin/wallet", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ action: "generate" })
       });
@@ -90,8 +103,12 @@ export default function AdminPage() {
       const acc = await getAccountBalances(data.publicKey);
       if (acc) setBalances(acc.balances);
 
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
+
       fetch("/api/admin/history", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}` }
+        headers: { Authorization: `Bearer ${token}` }
       }).then(r => r.json()).then(hd => setHistory(hd.history || []));
 
     } catch (err) {
@@ -105,11 +122,15 @@ export default function AdminPage() {
     if (!customSecret.startsWith("S")) return alert("Invalid secret key. Must start with S.");
     setFunding(true);
     try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
+
       const res = await fetch("/api/admin/wallet", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ action: "restore", secretKey: customSecret })
       });
@@ -123,7 +144,7 @@ export default function AdminPage() {
       setCustomSecret("");
 
       fetch("/api/admin/history", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}` }
+        headers: { Authorization: `Bearer ${token}` }
       }).then(r => r.json()).then(hd => setHistory(hd.history || []));
 
     } catch (err) {
@@ -173,9 +194,13 @@ export default function AdminPage() {
       const acc = await getAccountBalances(masterPublic);
       if (acc) setBalances(acc.balances);
 
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
+
       // Refresh history
       fetch("/api/admin/history", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}` }
+        headers: { Authorization: `Bearer ${token}` }
       }).then(r => r.json()).then(hd => setHistory(hd.history || []));
 
     } catch (err) {
@@ -247,9 +272,13 @@ export default function AdminPage() {
               <button 
                 className="btn btn-ghost" 
                 onClick={async () => {
+                  const supabase = createClient();
+                  const { data: { session } } = await supabase.auth.getSession();
+                  const token = session?.access_token || "";
+
                   await fetch("/api/admin/wallet", {
                     method: "DELETE",
-                    headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}` }
+                    headers: { Authorization: `Bearer ${token}` }
                   });
                   setMasterSecret("");
                   setMasterPublic("");
