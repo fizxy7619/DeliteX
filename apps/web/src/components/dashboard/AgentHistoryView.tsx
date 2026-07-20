@@ -50,7 +50,14 @@ export default function AgentHistoryView() {
     try {
       const res = await fetch("/api/ai/decisions");
       const data = await res.json();
-      setDecisions(data.decisions ?? []);
+      const decs = data.decisions ?? [];
+      setDecisions(decs);
+      
+      const pending = decs.find((d: DecisionRecord) => d.status === "pending");
+      if (pending) {
+        setPendingDecisionId(pending.id);
+        setPendingProposal(pending.proposal_json);
+      }
     } finally {
       setLoading(false);
     }
@@ -67,7 +74,6 @@ export default function AgentHistoryView() {
         if (found) {
           setPendingDecisionId(decisionId);
           setPendingProposal(found.proposal_json);
-          setActiveTab("history");
           fetchDecisions();
         }
       });
@@ -128,7 +134,22 @@ export default function AgentHistoryView() {
       </div>
 
       {activeTab === "agent" && (
-        <AiAssistant onPendingDecision={handlePendingDecision} />
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {pendingDecisionId && pendingProposal && (
+            <div style={{ position: "relative", zIndex: 10, animation: "fadeIn 0.3s ease-out" }}>
+              <AgentDecisionPanel
+                decisionId={pendingDecisionId}
+                proposal={pendingProposal}
+                onExecuted={handleExecuted}
+                onDismiss={() => { setPendingDecisionId(null); setPendingProposal(null); }}
+              />
+            </div>
+          )}
+          <AiAssistant onPendingDecision={handlePendingDecision} />
+          <style>{`
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+          `}</style>
+        </div>
       )}
 
       {activeTab === "history" && (

@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     {
       user_id: user.id,
       role: "assistant",
-      content: `✦ Proposal ready! I've analyzed your rules and prepared an allocation plan for $${amountUsdc} USDC (≈₹${(amountUsdc * fxRate).toLocaleString("en-IN")}). Check the **Agent** tab to review and approve.`,
+      content: `✦ Proposal ready! I've analyzed your rules and prepared an allocation plan for $${amountUsdc} USDC (≈₹${(amountUsdc * fxRate).toLocaleString("en-IN")}). Review and approve the proposal above.`,
       llm_model: "Agent Engine",
       created_at: new Date(Date.now() + 1000).toISOString()
     }
