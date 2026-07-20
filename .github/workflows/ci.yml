@@ -19,6 +19,10 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
 
+      - name: Build Vault Contract
+        run: cargo build -p vault --target wasm32-unknown-unknown --release
+        working-directory: contracts
+
       - name: Run Cargo Test
         run: cargo test
         working-directory: contracts
