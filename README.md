@@ -3,8 +3,8 @@
 > _Next-generation financial OS for freelancers and NRIs. Soroban-powered, AI-routed, fully production-ready._
 
 [![Network](https://img.shields.io/badge/Network-Stellar%20Testnet-blue)](https://stellar.org)
-[![Vault Contract](https://img.shields.io/badge/Soroban-Vault%20Contract-purple)](https://stellar.expert/explorer/testnet/contract/CC7Z3ALJMFFI3ICBTLJQGZQTA3XPIWCEOSBO3TMQQD52A3FQFM6VLVYS)
-[![Router Contract](https://img.shields.io/badge/Soroban-Router%20Contract-purple)](https://stellar.expert/explorer/testnet/contract/CAKXHCLWKWLETL532QDVC7XHCMUSMMFJCA34IT5SJT2LDTKUMOH6WBRW)
+[![Vault Contract](https://img.shields.io/badge/Soroban-Vault%20Contract-purple)](https://stellar.expert/explorer/testnet/contract/CAE3KJ5UNOJCEKNNXJ2H6DNKWQZCOUAQAN2UXUXZVRKMXOVAFXDYGJSW)
+[![Router Contract](https://img.shields.io/badge/Soroban-Router%20Contract-purple)](https://stellar.expert/explorer/testnet/contract/CCGWWHSKSBRVNZ4FNBNUFOG25BGDMAE6LIUZEKIHWGSHH6KMKVPRECXE)
 
 Delite is a **Soroban-powered Agentic Payment OS** deployed on **Stellar Testnet**, architected to automate global income flows using intelligent agents. Connect a Stellar wallet, fund via Friendbot, receive payments, and let the on-chain agent automatically route your funds to daily expenses, family remittances, and yield-generating vaults.
 
@@ -15,8 +15,8 @@ Delite is a **Soroban-powered Agentic Payment OS** deployed on **Stellar Testnet
 | Resource             | Value                                                      |
 | -------------------- | ---------------------------------------------------------- |
 | **Live Demo**        | [https://delite-x-web.vercel.app/](https://delite-x-web.vercel.app/) |
-| **Vault Contract**   | `CC7Z3ALJMFFI3ICBTLJQGZQTA3XPIWCEOSBO3TMQQD52A3FQFM6VLVYS` |
-| **Router Contract**  | `CAKXHCLWKWLETL532QDVC7XHCMUSMMFJCA34IT5SJT2LDTKUMOH6WBRW` |
+| **Vault Contract**   | `CAE3KJ5UNOJCEKNNXJ2H6DNKWQZCOUAQAN2UXUXZVRKMXOVAFXDYGJSW` |
+| **Router Contract**  | `CCGWWHSKSBRVNZ4FNBNUFOG25BGDMAE6LIUZEKIHWGSHH6KMKVPRECXE` |
 | **Network**          | Stellar Testnet                                            |
 | **Soroban RPC**      | `https://soroban-testnet.stellar.org`                      |
 
@@ -186,6 +186,8 @@ Open `http://localhost:3000` with your browser to experience the Delite OS.
 ### Real-World Transaction Proof
 ![Transaction Proof](apps/web/public/Screenshots/Transaction%20Proof.png)
 *Proof of real on-chain automated routing via Freighter wallet.*
+
+**Transaction Hash:** `[PASTE_TRANSACTION_HASH_HERE]`
 
 ---
 
