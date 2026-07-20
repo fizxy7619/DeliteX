@@ -37,8 +37,8 @@ function getServiceClient() {
 const VAULT_CONTRACT_ID = process.env.NEXT_PUBLIC_SOROBAN_VAULT || "CC7Z3ALJMFFI3ICBTLJQGZQTA3XPIWCEOSBO3TMQQD52A3FQFM6VLVYS";
 
 
-import { TransactionBuilder, Operation, BASE_FEE, Asset } from "@stellar/stellar-sdk";
-import { getHorizonServer, STELLAR_NETWORK_PASSPHRASE } from "@/lib/stellar/config";
+import { TransactionBuilder, Operation, BASE_FEE, Asset, Contract, Address, nativeToScVal, rpc } from "@stellar/stellar-sdk";
+import { getHorizonServer, STELLAR_NETWORK_PASSPHRASE, SOROBAN_RPC_URL } from "@/lib/stellar/config";
 
 export async function buildExecutionXdr(decisionId: string, userId: string): Promise<string> {
   const supabase = getServiceClient();
@@ -76,9 +76,22 @@ export async function buildExecutionXdr(decisionId: string, userId: string): Pro
     const xlmAmount = (item.amountUsdc * 8.33).toFixed(7);
 
     let destinationAddress: string | null = null;
-
+    
+    // For Soroban Smart Contract Route
     if (item.bucket === "savings") {
-      destinationAddress = profile.stellar_public_key; // Send to self for demo to avoid op_no_destination
+      const routerContract = new Contract(process.env.NEXT_PUBLIC_SOROBAN_ROUTER!);
+      const totalAmountStroops = BigInt(Math.floor(proposal.totalUsdc * 8.33 * 10000000));
+      const savingsPercent = Math.floor((item.amountUsdc / proposal.totalUsdc) * 100);
+
+      txBuilder.addOperation(
+        routerContract.call(
+          "allocate",
+          new Address(profile.stellar_public_key).toScVal(),
+          nativeToScVal(totalAmountStroops, { type: "i128" }),
+          nativeToScVal(savingsPercent, { type: "u32" })
+        )
+      );
+      continue;
     } else if (item.bucket === "family") {
       const { data: recipients } = await supabase
         .from("family_recipients")
@@ -119,7 +132,15 @@ export async function buildExecutionXdr(decisionId: string, userId: string): Pro
      );
   }
 
-  return txBuilder.setTimeout(300).build().toXDR();
+  let transaction = txBuilder.setTimeout(300).build();
+
+  // If there's a Soroban operation, simulate and attach footprint
+  if (proposal.items.some(i => i.bucket === "savings")) {
+    const rpcServer = new rpc.Server(SOROBAN_RPC_URL);
+    transaction = (await rpcServer.prepareTransaction(transaction)) as any;
+  }
+
+  return transaction.toXDR();
 }
 
 /**

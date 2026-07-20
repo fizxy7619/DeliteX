@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { AgentProposal } from "@/lib/ai/agent-engine";
 import type { ExecutionResult } from "@/lib/ai/executor";
+import { TransactionBuilder, rpc } from "@stellar/stellar-sdk";
 import {
   StellarWalletsKit,
   Networks,
@@ -66,15 +67,34 @@ export default function AgentDecisionPanel({ decisionId, proposal, onExecuted, o
           networkPassphrase: "Test SDF Network ; September 2015" 
         });
 
-        // 3. Submit to Stellar testnet
-        const submitRes = await fetch("https://horizon-testnet.stellar.org/transactions", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: `tx=${encodeURIComponent(signResult.signedTxXdr)}`,
-        });
-        const submitData = await submitRes.json();
-        if (!submitRes.ok) throw new Error("Stellar submission failed: " + (submitData.detail || "Unknown error"));
-        txHash = submitData.hash;
+        // 3. Submit to Stellar testnet via Soroban RPC
+        const rpcServer = new rpc.Server("https://soroban-testnet.stellar.org");
+        const tx = TransactionBuilder.fromXDR(signResult.signedTxXdr, "Test SDF Network ; September 2015");
+        const submitRes = await rpcServer.sendTransaction(tx as any);
+        
+        if (submitRes.status === "ERROR") {
+          throw new Error("Soroban submission failed");
+        }
+        
+        txHash = submitRes.hash;
+
+        // Poll for success
+        if (submitRes.status === "PENDING") {
+          let isSuccess = false;
+          for (let i = 0; i < 15; i++) {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            const txStatus = await rpcServer.getTransaction(txHash);
+            if (txStatus.status === "SUCCESS") {
+              isSuccess = true;
+              break;
+            } else if (txStatus.status === "FAILED") {
+              throw new Error("Soroban execution failed on-chain");
+            }
+          }
+          if (!isSuccess) {
+            throw new Error("Transaction polling timed out");
+          }
+        }
       } catch (err) {
         console.warn("Wallet signing failed or cancelled:", err);
         throw new Error("Wallet signing failed: " + ((err as Error).message || "Unknown error"));
