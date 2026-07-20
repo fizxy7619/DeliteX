@@ -25,6 +25,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [funding, setFunding] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [customSecret, setCustomSecret] = useState("");
+  const [lastTx, setLastTx] = useState<{ hash: string; user: string } | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("MASTER_WALLET_SECRET");
@@ -77,6 +79,25 @@ export default function AdminPage() {
     }
   };
 
+  const handleRestoreSecret = async () => {
+    if (!customSecret.startsWith("S")) return alert("Invalid secret key. Must start with S.");
+    setFunding(true);
+    try {
+      const { Keypair } = await import("@stellar/stellar-sdk");
+      const kp = Keypair.fromSecret(customSecret);
+      localStorage.setItem("MASTER_WALLET_SECRET", kp.secret());
+      setMasterSecret(kp.secret());
+      setMasterPublic(kp.publicKey());
+      const acc = await getAccountBalances(kp.publicKey());
+      if (acc) setBalances(acc.balances);
+      setCustomSecret("");
+    } catch (err) {
+      alert("Invalid secret key: " + (err as Error).message);
+    } finally {
+      setFunding(false);
+    }
+  };
+
   const handleSendPaycheck = async (user: UserProfile) => {
     if (!masterSecret) return alert("Initialize Master Wallet first");
     setSendingId(user.id);
@@ -111,7 +132,7 @@ export default function AdminPage() {
         throw new Error(errorData.error || "Failed to record payment");
       }
 
-      alert(`Successfully sent 1000 XLM to ${user.full_name}!`);
+      setLastTx({ hash: txHash, user: user.full_name || user.email });
       
       // Refresh Master Wallet Balance
       const acc = await getAccountBalances(masterPublic);
@@ -140,22 +161,42 @@ export default function AdminPage() {
           {!masterSecret ? (
             <div>
               <p style={{ color: "var(--color-ink-300)", marginBottom: "16px" }}>
-                No Master Wallet found in localStorage. Generate one to act as the Employer/Admin.
+                No Master Wallet found in localStorage. Generate one to act as the Employer/Admin, or restore an existing one.
               </p>
-              <button 
-                className="btn btn-primary" 
-                onClick={handleGenerateAndFund}
-                disabled={funding}
-              >
-                {funding ? "Generating & Funding..." : "Generate & Fund with 10k XLM"}
-              </button>
+              <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={handleGenerateAndFund}
+                  disabled={funding}
+                >
+                  {funding ? "Generating & Funding..." : "Generate & Fund with 10k XLM"}
+                </button>
+              </div>
+              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <input 
+                  type="text" 
+                  className="input" 
+                  placeholder="Or paste an existing secret key starting with S..."
+                  value={customSecret}
+                  onChange={(e) => setCustomSecret(e.target.value)}
+                  style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.05)", color: "#fff", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "10px 16px" }}
+                />
+                <button 
+                  className="btn btn-ghost" 
+                  onClick={handleRestoreSecret}
+                  disabled={!customSecret.startsWith("S")}
+                  style={{ border: "1px solid rgba(255,255,255,0.2)" }}
+                >
+                  Restore
+                </button>
+              </div>
             </div>
           ) : (
             <div>
               <p style={{ fontSize: "0.875rem", color: "var(--color-ink-300)", wordBreak: "break-all", marginBottom: "16px" }}>
                 <strong>Public Key:</strong> {masterPublic}
               </p>
-              <div style={{ display: "flex", gap: "16px" }}>
+              <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
                 {balances.map(b => (
                   <div key={b.asset} style={{ backgroundColor: "rgba(255,255,255,0.05)", padding: "12px 20px", borderRadius: "8px" }}>
                     <p style={{ fontSize: "0.75rem", color: "var(--color-ink-500)", textTransform: "uppercase" }}>{b.asset === "native" ? "XLM" : b.asset}</p>
@@ -163,9 +204,32 @@ export default function AdminPage() {
                   </div>
                 ))}
               </div>
+              <button 
+                className="btn btn-ghost" 
+                onClick={() => { localStorage.removeItem("MASTER_WALLET_SECRET"); setMasterSecret(""); }}
+                style={{ fontSize: "0.875rem", padding: "6px 12px", border: "1px solid rgba(255,0,0,0.3)", color: "#ff6b6b" }}
+              >
+                Disconnect Wallet
+              </button>
             </div>
           )}
         </div>
+
+        {lastTx && (
+          <div className="card" style={{ marginBottom: "32px", padding: "20px", border: "1px solid var(--color-jade)", backgroundColor: "var(--color-jade-light)" }}>
+            <h3 style={{ color: "var(--color-jade)", fontWeight: 600, marginBottom: "8px" }}>✓ Payment Sent to {lastTx.user}</h3>
+            <p style={{ fontSize: "0.875rem", color: "var(--color-jade)", marginBottom: "12px" }}>The transaction was successfully submitted to the Stellar Testnet.</p>
+            <a 
+              href={`https://stellar.expert/explorer/testnet/tx/${lastTx.hash}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+              style={{ display: "inline-block", backgroundColor: "var(--color-jade)" }}
+            >
+              View on Stellar Expert ↗
+            </a>
+          </div>
+        )}
 
         <div className="card" style={{ padding: "32px" }}>
           <h2 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: "16px" }}>Registered Users</h2>
