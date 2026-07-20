@@ -242,7 +242,7 @@ export interface FamilyRecipient {
   relationship: string; // "Parent", "Sibling", "Spouse" etc.
   avatarInitials: string;
 
-  payeeType: "upi" | "bank_account";
+  payeeType: "upi" | "bank_account" | "stellar";
   payeeIdentifier: string; // UPI VPA or masked bank account
   payeeLabel: string; // e.g. "PhonePe", "SBI Main"
 
@@ -298,6 +298,7 @@ export interface SavingsVault {
   autoDepositEnabled: boolean;
 
   lastYieldClaimedAt: string | null;
+  createdAt: string;
   updatedAt: string;
 }
 

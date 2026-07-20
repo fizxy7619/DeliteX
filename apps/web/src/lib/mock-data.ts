@@ -302,7 +302,8 @@ export const MOCK_VAULT: SavingsVault = {
   autoDepositThresholdInr: 50000,
   autoDepositEnabled: true,
   lastYieldClaimedAt: null,
-  updatedAt: "2026-07-14T00:00:00Z",
+  createdAt: "2024-05-18T10:00:00Z",
+  updatedAt: "2024-05-18T10:00:00Z",
 };
 
 // ─── Allocation Rules ─────────────────────────────────────────
