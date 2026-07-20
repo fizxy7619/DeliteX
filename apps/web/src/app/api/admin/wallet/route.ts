@@ -37,8 +37,8 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ exists: true, publicKey: data.public_key, secretKey: data.secret_key });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 }
 
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { action, secretKey } = body;
 
-    let kp: any;
+    let kp: { publicKey: string; secretKey: string } | undefined;
     
     if (action === "generate") {
       kp = generateKeypair();
@@ -88,8 +88,8 @@ export async function POST(request: Request) {
     if (error) throw error;
 
     return NextResponse.json({ publicKey: kp.publicKey, secretKey: kp.secretKey });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 }
 
@@ -113,7 +113,7 @@ export async function DELETE(request: Request) {
     await serviceSupabase.from("admin_wallets").delete().eq("user_id", user.id);
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 }

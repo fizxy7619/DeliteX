@@ -40,7 +40,7 @@ export async function GET(request: Request) {
     if (error) throw error;
 
     return NextResponse.json({ history: events });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 }

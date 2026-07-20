@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  generateKeypair,
-  fundTestnetAccount,
   getAccountBalances,
   sendPayment,
   type StellarBalance
@@ -28,7 +26,7 @@ export default function AdminPage() {
   const [customSecret, setCustomSecret] = useState("");
   const [lastTx, setLastTx] = useState<{ hash: string; user: string } | null>(null);
 
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<Record<string, unknown>[]>([]);
 
   useEffect(() => {
     // Fetch master wallet from API
