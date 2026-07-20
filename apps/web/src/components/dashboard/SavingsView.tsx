@@ -39,15 +39,23 @@ export default function SavingsView() {
       alert("Not enough funds to withdraw 10 USDC!");
       return;
     }
-    const positionId = vault?.positions?.[0]?.id;
-    if (!positionId) return alert("No active position found.");
     
     setIsDepositing(true);
     try {
+      const posRes = await fetch("/api/vault/positions");
+      if (!posRes.ok) throw new Error("Failed to fetch positions");
+      const { positions } = await posRes.json();
+      const activePosition = positions.find((p: { status: string; id: string }) => p.status === "active");
+      
+      if (!activePosition) {
+        setIsDepositing(false);
+        return alert("No active position found.");
+      }
+
       const res = await fetch("/api/vault/withdraw", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ positionId, amountUsdc: 10 })
+        body: JSON.stringify({ positionId: activePosition.id, amountUsdc: 10 })
       });
       if (!res.ok) throw new Error("Withdraw failed");
       await refreshData();
