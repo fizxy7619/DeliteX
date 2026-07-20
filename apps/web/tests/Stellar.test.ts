@@ -38,4 +38,18 @@ describe('horizonPaymentToEvent', () => {
     expect(result.currency).toBe('USDC');
     expect(result.counterparty).toBe('GRECEIVER');
   });
+  it('should default to Unknown for unsupported asset types', () => {
+    const record = {
+      to: 'GOWNER',
+      from: 'GUNKNOWN',
+      amount: '100.0',
+      asset_type: 'liquidity_pool_shares',
+      transaction_hash: 'ghi',
+      created_at: '2023-01-03',
+    } as unknown as Parameters<typeof horizonPaymentToEvent>[0];
+
+    const result = horizonPaymentToEvent(record, 'GOWNER');
+    expect(result.direction).toBe('incoming');
+    expect(result.currency).toBe('XLM');
+  });
 })
