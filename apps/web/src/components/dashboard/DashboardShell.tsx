@@ -11,6 +11,7 @@ import RulesEditor from "@/components/dashboard/RulesEditor";
 import StellarView from "@/components/dashboard/StellarView";
 import AgentHistoryView from "@/components/dashboard/AgentHistoryView";
 import DemoBar from "@/components/dashboard/DemoBar";
+import ProfileView from "@/components/dashboard/ProfileView";
 import { DashboardProvider, useDashboardContext } from "@/hooks/DashboardContext";
 import {
   StellarWalletsKit,
@@ -29,6 +30,7 @@ const SECTION_TITLES: Record<Section, string> = {
   rules: "Rules",
   agent: "AI Agent",
   stellar: "Stellar (Testnet)",
+  profile: "Profile & Settings",
 };
 
 interface DashboardShellProps {
@@ -101,11 +103,12 @@ function DashboardContent({ userEmail }: { userEmail: string }) {
       case "rules":     return <RulesEditor />;
       case "agent":     return <AgentHistoryView />;
       case "stellar":   return <StellarView />;
+      case "profile":   return <ProfileView userEmail={userEmail} />;
     }
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+    <div className="dashboard-theme" style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <DemoBar />
       <div style={{ display: "flex", flex: 1, backgroundColor: "var(--color-bg)" }}>
         <Sidebar

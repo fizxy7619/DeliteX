@@ -54,9 +54,11 @@ export default function OverviewView() {
 
   // Temporary FX rate for demo (testnet USDC -> INR)
   const USDC_INR = 84.1;
+  const XLM_INR = 10.5; // Approx FX rate for XLM
 
   // Real data parsing
   const usdcBalance = parseFloat(stellarAccount?.balances.find(b => b.asset === "USDC")?.balance || "0");
+  const xlmBalance = parseFloat(stellarAccount?.balances.find(b => b.asset === "native")?.balance || "0");
   
   // Calculate bucket totals from real DB data
   const billsTotal = bills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
@@ -65,11 +67,11 @@ export default function OverviewView() {
   const buckets: Bucket[] = [
     {
       type: "income",
-      label: "Income",
-      description: "Global earnings in USDC",
-      balanceNative: usdcBalance,
-      balanceInr: usdcBalance * USDC_INR,
-      nativeCurrency: "USDC",
+      label: "Wallet",
+      description: "Available crypto balance",
+      balanceNative: xlmBalance > 0 ? xlmBalance : usdcBalance,
+      balanceInr: (usdcBalance * USDC_INR) + (xlmBalance * XLM_INR),
+      nativeCurrency: xlmBalance > 0 ? "XLM" : "USDC",
       stellarAccountOrContractId: stellarAccount?.publicKey || null,
     },
     {
@@ -140,7 +142,7 @@ export default function OverviewView() {
           { label: "Family transferred", value: fmt(familyTotal) },
           { label: "Yield earned (USDC)", value: `+$${(vault?.yieldEarnedUsdc || 0).toFixed(2)}` },
         ].map((s) => (
-          <div key={s.label} style={{ backgroundColor: "#fff", padding: "20px" }}>
+          <div key={s.label} style={{ backgroundColor: "var(--color-bg-card)", padding: "20px" }}>
             <p style={{ fontSize: "0.75rem", color: "var(--color-ink-500)", marginBottom: "6px" }}>{s.label}</p>
             <p style={{ fontFamily: "var(--font-display)", fontSize: "1.375rem", color: "var(--color-ink-900)" }}>{s.value}</p>
           </div>
@@ -150,9 +152,9 @@ export default function OverviewView() {
       {/* Recent activity */}
       <div>
         <p style={{ fontWeight: 600, fontSize: "0.9375rem", color: "var(--color-ink-900)", marginBottom: "16px" }}>Recent activity</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0", border: "1px solid var(--color-border)", borderRadius: "12px", overflow: "hidden" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0", border: "1px solid var(--color-border)", borderRadius: "12px", overflow: "hidden", backgroundColor: "var(--color-bg-card)" }}>
           {recentEvents.length === 0 ? (
-            <div style={{ padding: "20px", textAlign: "center", backgroundColor: "#fff", color: "var(--color-ink-500)", fontSize: "0.875rem" }}>
+            <div style={{ padding: "20px", textAlign: "center", color: "var(--color-ink-500)", fontSize: "0.875rem" }}>
               No recent activity found.
             </div>
           ) : recentEvents.map((row, i) => {
@@ -168,7 +170,6 @@ export default function OverviewView() {
                   justifyContent: "space-between",
                   padding: "14px 20px",
                   borderBottom: i < recentEvents.length - 1 ? "1px solid var(--color-border)" : "none",
-                  backgroundColor: "#fff",
                 }}
               >
                 <div>

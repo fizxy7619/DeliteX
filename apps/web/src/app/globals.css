@@ -317,6 +317,38 @@ a {
 .landing-theme .input::placeholder { color: rgba(255, 255, 255, 0.4); }
 .landing-theme .input:focus { border-color: rgba(255, 255, 255, 0.4); }
 
+.dashboard-theme {
+  --color-bg: #0A0A0A;
+  --color-bg-card: rgba(255, 255, 255, 0.03);
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-ink-900: #ffffff;
+  --color-ink-700: rgba(255, 255, 255, 0.8);
+  --color-ink-500: rgba(255, 255, 255, 0.6);
+  --color-ink-300: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  background-color: var(--color-bg);
+}
+
+.dashboard-theme .divider {
+  border-top-color: var(--color-border);
+}
+
+.dashboard-theme .input {
+  background-color: var(--color-bg-card);
+  border-color: var(--color-border);
+  color: #ffffff;
+}
+.dashboard-theme .input::placeholder { color: var(--color-ink-300); }
+.dashboard-theme .input:focus { border-color: var(--color-ink-500); }
+
+.dashboard-theme .card {
+  background-color: var(--color-bg-card);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
 /* Liquid Metal Buttons */
 .landing-theme .btn-saffron {
   background: linear-gradient(180deg, #f29c38 0%, #e8872a 48%, #d87619 50%, #f4a54a 100%);
