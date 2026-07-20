@@ -136,7 +136,6 @@ export default function AiAssistant({ onPendingDecision }: { onPendingDecision?:
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setMessages(aiMessages);
     } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMessages([
         { id: "welcome", role: "assistant", content: "Hi! I'm your AI agent. I can help you automate payments or simulate testnet transactions. How can I help today?", createdAt: new Date().toISOString(), parsedRule: null, llmModel: null, llmLatencyMs: null }
       ]);
