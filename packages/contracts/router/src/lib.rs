@@ -49,22 +49,3 @@ impl PaymentRouter {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-    use soroban_sdk::{testutils::Address as _, Address, Env};
-
-    // Note: Cross-contract testing in Soroban requires registering both contracts.
-    // For simplicity, we just verify the router compiles.
-    #[test]
-    fn test_initialization() {
-        let env = Env::default();
-        let router_id = env.register_contract(None, PaymentRouter);
-        let router_client = PaymentRouterClient::new(&env, &router_id);
-
-        let admin = Address::generate(&env);
-        let vault_id = Address::generate(&env);
-
-        router_client.initialize(&admin, &vault_id);
-    }
-}

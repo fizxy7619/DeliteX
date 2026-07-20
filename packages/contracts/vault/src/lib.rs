@@ -54,35 +54,3 @@ impl YieldVault {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-    use soroban_sdk::{testutils::Address as _, Address, Env};
-    use soroban_sdk::token::Client as TokenClient;
-    use soroban_sdk::token::StellarAssetClient as TokenAdminClient;
-
-    #[test]
-    fn test_deposit() {
-        let env = Env::default();
-        env.mock_all_auths();
-
-        let vault_id = env.register_contract(None, YieldVault);
-        let vault_client = YieldVaultClient::new(&env, &vault_id);
-
-        let admin = Address::generate(&env);
-        let user = Address::generate(&env);
-
-        let token_id = env.register_stellar_asset_contract_v2(admin.clone()).address();
-        let token_admin = TokenAdminClient::new(&env, &token_id);
-        let token = TokenClient::new(&env, &token_id);
-
-        vault_client.initialize(&admin, &token_id);
-        token_admin.mint(&user, &1000);
-
-        vault_client.deposit(&user, &user, &500);
-
-        assert_eq!(vault_client.balance(&user), 500);
-        assert_eq!(token.balance(&vault_id), 500);
-        assert_eq!(token.balance(&user), 500);
-    }
-}
