@@ -1,86 +1,169 @@
-# Delite - Agentic Payment OS 🚀
+# Delite — Agentic Remittance & Payments OS on Stellar Testnet
 
-Delite is a next-generation Agentic Remittance & Payments OS built specifically for freelancers, remote workers, NRIs, and their families. It functions as an intelligent financial operating system that combines the frictionless experience of Revolut/Wise with an autonomous AI finance assistant.
+> _Next-generation financial OS for freelancers and NRIs. Soroban-powered, AI-routed, fully production-ready._
 
-Whether you are receiving global income, managing family remittances, or building a high-yield savings safety net, Delite automates your money flows instantly and with near-zero fees.
+[![Network](https://img.shields.io/badge/Network-Stellar%20Testnet-blue)](https://stellar.org)
+[![Vault Contract](https://img.shields.io/badge/Soroban-Vault%20Contract-purple)](https://stellar.expert/explorer/testnet/contract/CBHHUKU65XWOJYXEXBJHU7PJOZEWG2AOGKZ56ASPU3OG7FXEZCQMT45O)
+[![Router Contract](https://img.shields.io/badge/Soroban-Router%20Contract-purple)](https://stellar.expert/explorer/testnet/contract/CCEQR6MONDFSUYHSIJU5QMKWVJKT3WMGBV32NHWAR766TIUYBN2B6CEK)
 
----
-
-## 🌟 Key Features
-
-### 🤖 Autonomous AI Finance Assistant
-Say goodbye to manual transfers and complicated budget management. Delite's intelligent agent automatically routes incoming funds based on your preset rules. Receive a payment, and the agent instantly splits it between your daily expenses, family remittances, and savings goals.
-
-### 🌍 Borderless Global Income
-Receive payments from clients anywhere in the world. Delite uses decentralized liquidity networks to convert and settle global stablecoin and fiat payments instantly, bypassing traditional banking delays and exorbitant FX fees.
-
-### 💸 Instant & Cheap Remittance
-Send money back home to family members instantly. By leveraging blockchain infrastructure on the backend, cross-border remittances settle in seconds for fractions of a cent, arriving directly to local fiat off-ramps (e.g., UPI, Onramp).
-
-### 📈 Automated Yield Generation (Savings Vaults)
-Idle cash shouldn't sit still. Delite's smart "Vaults" automatically sweep your surplus funds into secure, yield-bearing decentralized protocols. Your savings grow safely in the background without any manual intervention.
-
-### 🔒 Secure & Non-Custodial
-You are always in control of your funds. Delite utilizes self-custodial smart contracts and wallet integrations to ensure that your money cannot be accessed by anyone but you and the autonomous agents you authorize.
+Delite is a **Soroban-powered Agentic Payment OS** deployed on **Stellar Testnet**, architected to automate global income flows using intelligent agents. Connect a Stellar wallet, fund via Friendbot, receive payments, and let the on-chain agent automatically route your funds to daily expenses, family remittances, and yield-generating vaults.
 
 ---
 
-## 📸 Screenshots
+## Live Deployment
+
+| Resource             | Value                                                      |
+| -------------------- | ---------------------------------------------------------- |
+| **Live Demo**        | *(Add your live deployment link here)*                     |
+| **Vault Contract**   | `CBHHUKU65XWOJYXEXBJHU7PJOZEWG2AOGKZ56ASPU3OG7FXEZCQMT45O` |
+| **Router Contract**  | `CCEQR6MONDFSUYHSIJU5QMKWVJKT3WMGBV32NHWAR766TIUYBN2B6CEK` |
+| **Network**          | Stellar Testnet                                            |
+| **Soroban RPC**      | `https://soroban-testnet.stellar.org`                      |
+
+---
+
+## Features
+
+### User-Facing
+
+- **Autonomous Agent Logic** — Smart contract router instantly splits incoming payments into customizable remittance and savings streams.
+- **Yield Generation Vaults** — Idle funds are routed to an ERC-4626 style Soroban vault for automated yield generation.
+- **Borderless Global Income** — Settle cross-border payments instantly with near-zero fees using Stellar's decentralized liquidity.
+- **Multi-Wallet Support** — Connect seamlessly using the Freighter wallet.
+- **Testnet Faucet** — One-click Friendbot funding to get new users onboarded to the testnet instantly.
+- **Live On-Chain Data** — Real-time XLM balances and active smart contract positions fetched directly from the Soroban RPC.
+- **Progressive UI/UX** — Modern, dynamic dashboard tracking agent allocations and vault yields.
+
+---
+
+## Architecture
+
+```text
+ ┌────────────────┐   sign tx (XDR)    ┌──────────────────────────────────┐
+ │ Stellar wallet │ ◀───────────────── │  Delite web app (Next.js)        │
+ │ (Freighter)    │ ─signed XDR──────▶ │  /dashboard · /allocations       │
+ └────────────────┘                    └──────────┬───────────────────────┘
+                                                  │ Horizon / Soroban RPC
+                                                  ▼
+                                       ┌──────────────────────┐
+                                       │  Soroban Router      │
+                                       │  (Agentic splits)    │
+                                       └──────────┬───────────┘
+                                                  ▼
+                                       ┌──────────────────────┐
+                                       │  Soroban Vault       │
+                                       │  (Yield Generation)  │
+                                       └──────────────────────┘
+```
+
+---
+
+## Project Structure
+
+```text
+delite/
+├── apps/
+│   └── web/                   Next.js App Router frontend
+│       ├── src/app/           Pages and API routes
+│       └── src/components/    React components (Dashboard, StellarView)
+│
+├── packages/
+│   ├── contracts/             Rust Soroban contracts
+│   │   ├── router/            Agent allocation logic
+│   │   ├── vault/             Yield generation vault
+│   │   └── scripts/           Testnet deployment pipeline (`deploy.js`)
+│   │
+│   ├── ui/                    Shared shadcn/ui React components
+│   ├── config-eslint/         Monorepo linting rules
+│   └── config-typescript/     Monorepo TS configs
+│
+├── .env.example               Environment variable template
+├── package.json               Turborepo root config
+└── pnpm-workspace.yaml
+```
+
+---
+
+## Environment Variables
+
+| Variable                       | Required | Default | Description                                                |
+| ------------------------------ | -------- | ------- | ---------------------------------------------------------- |
+| `NEXT_PUBLIC_SOROBAN_VAULT`    | Yes      | `""`    | Deployed Vault contract ID on Stellar Testnet              |
+| `NEXT_PUBLIC_SOROBAN_ROUTER`   | Yes      | `""`    | Deployed Router contract ID on Stellar Testnet             |
+
+---
+
+## Setup
+
+### Prerequisites
+
+- Node 18+ with `pnpm`
+- Rust + `wasm32-unknown-unknown` target
+- A Stellar wallet extension (Freighter recommended)
+
+### Quick Start
+
+```bash
+# Clone and install dependencies
+git clone https://github.com/fizxy7619/DeliteX.git
+cd DeliteX
+pnpm install
+
+# (Optional) Deploy the Soroban contracts to Testnet
+cd packages/contracts
+pnpm run build
+node scripts/deploy.js
+cd ../../
+
+# Start dev server
+pnpm dev
+```
+Open `http://localhost:3000` with your browser to experience the Delite OS.
+
+---
+
+## Screenshots
 
 *(Replace the placeholders below with actual screenshots of your application)*
 
-### 1. Dashboard Overview
-![Dashboard Placeholder](placeholder-dashboard.png)
-*Description: The main Delite dashboard showing your global balance, recent AI-routed transactions, and yield generation.*
+### Dashboard
+![Dashboard](docs/screenshots/Dashboard.png)
 
-### 2. Creating an Agent Allocation Rule
-![Allocation Flow Placeholder](placeholder-allocation.png)
-*Description: Setting up smart routing rules to automatically split incoming payments between Savings and Family.*
+Shows the main Delite dashboard, wallet connection, and testnet XLM balance.
 
-### 3. Instant Settlement & Transaction History
-![Transaction Placeholder](placeholder-transaction.png)
-*Description: A transparent view of all instant cross-border settlements and smart contract executions.*
+### Agent Allocation Flow
+![Allocation Success](docs/screenshots/Allocation.png)
 
----
+Triggering the smart contract router to split incoming payments.
 
-## 🛠 Tech Stack
+### Transaction Hash
+![Transaction Hash](docs/screenshots/Transaction.png)
 
-- **Frontend**: Next.js (React), Tailwind CSS, TypeScript
-- **Smart Contracts**: Rust, WebAssembly (Wasm)
-- **Blockchain Infrastructure**: Stellar Network & Soroban Smart Contracts (for high-speed, low-cost global settlement and yield vaults)
-- **Wallet Integration**: Freighter API
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js (v18+)
-- `pnpm` (or `npm`/`yarn`)
-- [Freighter Wallet](https://www.freighter.app/) (For testnet interaction)
-- Rust & Soroban CLI (If building contracts locally)
-
-### Installation & Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/fizxy7619/DeliteX.git
-   cd DeliteX
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   ```
-
-3. **Run the Development Server**
-   ```bash
-   pnpm dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) with your browser to experience the Delite OS.
+A crop of the transaction hash details as shown after a smart contract execution.
 
 ---
 
-## 🤝 Contributing
-Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
+## Deployed Contract Information
 
-## 📄 License
-This project is licensed under the MIT License.
+- **Live Demo Link:** *(Your live deployment URL)*
+- **Vault Contract Address:** `CBHHUKU65XWOJYXEXBJHU7PJOZEWG2AOGKZ56ASPU3OG7FXEZCQMT45O`
+- **Router Contract Address:** `CCEQR6MONDFSUYHSIJU5QMKWVJKT3WMGBV32NHWAR766TIUYBN2B6CEK`
+- **Network:** Stellar Testnet
+- **Soroban RPC URL:** `https://soroban-testnet.stellar.org`
+
+---
+
+## Roadmap
+
+| Level | Feature                                                           | Status    |
+| ----- | ----------------------------------------------------------------- | --------- |
+| L1    | Freighter Wallet connect, friendbot funding, XLM transfers        | ✅ Done   |
+| L2    | Full Soroban vault contract (yield generation) natively deployed  | ✅ Done   |
+| L3    | Agentic router contract for automated multi-stream allocations    | ✅ Done   |
+| L4    | Full Mainnet launch and fiat on-ramp integration                  | 🔜 Next   |
+
+---
+
+## Disclaimer
+
+Testnet only. Not financial advice. Real token state lives on-chain via the deployed Soroban smart contracts on the Stellar Testnet.
