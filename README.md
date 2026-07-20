@@ -54,45 +54,6 @@ By utilizing Stellar's near-zero fee, high-throughput network, and Soroban's rus
 
 ---
 
-## Screenshots
-
-<div align="center">
-  <img src="apps/web/public/Screenshots/Landing%20Page.png" width="800" alt="Landing Page">
-</div>
-
-### Delite Dashboard
-<div align="center">
-  <img src="apps/web/public/Screenshots/Dashbaord.png" width="800" alt="Dashboard">
-</div>
-
-### Agentic AI Assistant
-<div align="center">
-  <img src="apps/web/public/Screenshots/Agentic%20Ai.png" width="800" alt="Agentic AI">
-</div>
-
-### Family & Remittance
-<div align="center">
-  <img src="apps/web/public/Screenshots/Family%20&%20Remitance.png" width="800" alt="Family & Remittance">
-</div>
-
-### On-Chain Transactions
-<div align="center">
-  <img src="apps/web/public/Screenshots/Vault%20Transaction.png" width="400" alt="Vault Transaction">
-  <img src="apps/web/public/Screenshots/Transaction%20Proof.png" width="400" alt="Transaction Proof">
-</div>
-
-### Soroban Smart Contracts
-<div align="center">
-  <img src="apps/web/public/Screenshots/Deployed%20Vault%20Contract.png" width="800" alt="Deployed Vault Contract">
-</div>
-
-### CI/CD Pipeline
-<div align="center">
-  <img src="apps/web/public/Screenshots/CI%20CD%20Pipeline.png" width="800" alt="CI/CD Pipeline">
-</div>
-
----
-
 ## Architecture Flow
 
 The Delite architecture merges off-chain AI reasoning with on-chain deterministic execution. Here is the step-by-step lifecycle of a Delite allocation rule:
@@ -225,6 +186,14 @@ Open `http://localhost:3000` with your browser to experience the Delite OS.
 ### Real-World Transaction Proof
 ![Transaction Proof](apps/web/public/Screenshots/Transaction%20Proof.png)
 *Proof of real on-chain automated routing via Freighter wallet.*
+
+### Vault Transaction
+![Vault Transaction](apps/web/public/Screenshots/Vault%20Transaction.png)
+*Soroban Vault deposit execution.*
+
+### Deployed Vault Contract
+![Deployed Vault Contract](apps/web/public/Screenshots/Deployed%20Vault%20Contract.png)
+*View of the deployed yield vault smart contract.*
 
 **Transaction Hash:** `[PASTE_TRANSACTION_HASH_HERE]`
 
