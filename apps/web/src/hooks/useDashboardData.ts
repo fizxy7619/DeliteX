@@ -117,22 +117,43 @@ export function useDashboardData() {
         createdAt: f.created_at
       })));
 
-      setVault(vData ? {
-        ...vData,
-        id: vData.id,
-        userId: vData.user_id,
-        principalUsdc: vData.principal_usdc,
-        totalValueUsdc: realVaultBalance > 0 ? realVaultBalance : vData.total_value_usdc,
-        yieldEarnedUsdc: vData.yield_earned_usdc,
-        estimatedApyPercent: vData.estimated_apy_percent,
-        sorobanContractId: vData.soroban_contract_id,
-        vaultSharesHeld: vData.vault_shares_held,
-        autoDepositThresholdInr: vData.auto_deposit_threshold_inr,
-        autoDepositEnabled: vData.auto_deposit_enabled,
-        lastYieldClaimedAt: vData.last_yield_claimed_at,
-        createdAt: vData.created_at,
-        updatedAt: vData.updated_at
-      } : null);
+      let vaultObj: SavingsVault | null = null;
+      if (vData) {
+        vaultObj = {
+          ...vData,
+          id: vData.id,
+          userId: vData.user_id,
+          principalUsdc: vData.principal_usdc,
+          totalValueUsdc: realVaultBalance > 0 ? realVaultBalance : vData.total_value_usdc,
+          yieldEarnedUsdc: vData.yield_earned_usdc,
+          estimatedApyPercent: vData.estimated_apy_percent,
+          sorobanContractId: vData.soroban_contract_id,
+          vaultSharesHeld: vData.vault_shares_held,
+          autoDepositThresholdInr: vData.auto_deposit_threshold_inr,
+          autoDepositEnabled: vData.auto_deposit_enabled,
+          lastYieldClaimedAt: vData.last_yield_claimed_at,
+          createdAt: vData.created_at,
+          updatedAt: vData.updated_at
+        };
+      } else if (realVaultBalance > 0) {
+        // User deposited to vault via agent but DB sync hasn't occurred
+        vaultObj = {
+          id: "synthetic-" + user.id,
+          userId: user.id,
+          principalUsdc: realVaultBalance,
+          totalValueUsdc: realVaultBalance,
+          yieldEarnedUsdc: 0,
+          estimatedApyPercent: 5.25,
+          sorobanContractId: process.env.NEXT_PUBLIC_SOROBAN_VAULT || "",
+          vaultSharesHeld: 0,
+          autoDepositThresholdInr: 0,
+          autoDepositEnabled: false,
+          lastYieldClaimedAt: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+      }
+      setVault(vaultObj);
 
       setRules((rData || []).map((r: any) => ({
         ...r,
