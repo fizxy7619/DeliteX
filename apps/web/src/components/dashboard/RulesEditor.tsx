@@ -2,6 +2,7 @@
 
 import { useDashboardContext } from "@/hooks/DashboardContext";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function RulesEditor() {
   const { rules, refreshData } = useDashboardContext();
@@ -27,12 +28,12 @@ export default function RulesEditor() {
       });
       if (!res.ok) {
         const err = await res.json();
-        alert("Failed to toggle rule: " + (err.error || "Unknown error"));
+        toast.error("Failed to toggle rule: " + (err.error || "Unknown error"));
       } else {
         await refreshData();
       }
     } catch (e) {
-      alert("Error: " + (e as Error).message);
+      toast.error("Error: " + (e as Error).message);
     } finally {
       setToggling(prev => ({ ...prev, [ruleId]: false }));
     }
@@ -43,7 +44,7 @@ export default function RulesEditor() {
     try {
       const total = allocations.reduce((s, a) => s + (a.percent || 0), 0);
       if (total > 100) {
-        alert(`Allocations total ${total}% — must be ≤ 100%.`);
+        toast.error(`Allocations total ${total}% — must be ≤ 100%.`);
         return;
       }
 
@@ -57,7 +58,7 @@ export default function RulesEditor() {
       });
       if (!res.ok) {
         const err = await res.json();
-        alert("Failed to save rule: " + (err.error || "Unknown error"));
+        toast.error("Failed to save rule: " + (err.error || "Unknown error"));
         return;
       }
       await refreshData();
@@ -69,8 +70,9 @@ export default function RulesEditor() {
         { bucket: "savings", percent: 30 },
         { bucket: "family", percent: 20 },
       ]);
+      toast.success("Rule saved successfully.");
     } catch (e) {
-      alert("Error: " + (e as Error).message);
+      toast.error("Error: " + (e as Error).message);
     } finally {
       setSaving(false);
     }

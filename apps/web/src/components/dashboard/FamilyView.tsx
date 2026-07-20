@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useDashboardContext } from "@/hooks/DashboardContext";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 import type { FamilyRecipient } from "@/types/domain";
 import { TransactionBuilder, Operation, Asset, rpc, BASE_FEE } from "@stellar/stellar-sdk";
 import { getHorizonServer, STELLAR_NETWORK_PASSPHRASE, SOROBAN_RPC_URL } from "@/lib/stellar/config";
@@ -18,6 +19,8 @@ export default function FamilyView() {
   
   const [isAdding, setIsAdding] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showSendModal, setShowSendModal] = useState<RawFamily | null>(null);
+  const [sendAmountInr, setSendAmountInr] = useState("");
   const [newName, setNewName] = useState("");
   const [newRelationship, setNewRelationship] = useState("");
   const [newAddress, setNewAddress] = useState("");
@@ -29,9 +32,9 @@ export default function FamilyView() {
   const getPayeeLabel = (f: RawFamily) => f.payeeLabel ?? f.payee_label ?? "";
 
   const handleAddRecipient = async () => {
-    if (!profile) return alert("Please connect or login first.");
-    if (!newName || !newRelationship || !newAddress || !newAmount) return alert("Please fill all fields.");
-    if (!newAddress.startsWith("G") || newAddress.length !== 56) return alert("Invalid Stellar G-address.");
+    if (!profile) return toast.error("Please connect or login first.");
+    if (!newName || !newRelationship || !newAddress || !newAmount) return toast.error("Please fill all fields.");
+    if (!newAddress.startsWith("G") || newAddress.length !== 56) return toast.error("Invalid Stellar G-address.");
     
     setIsAdding(true);
     const supabase = createClient();
@@ -54,18 +57,18 @@ export default function FamilyView() {
       setNewRelationship("");
       setNewAddress("");
       setNewAmount("");
+      toast.success("Recipient added successfully.");
     } catch (err) {
       console.error(err);
-      alert("Failed to add recipient.");
+      toast.error("Failed to add recipient.");
     } finally {
       setIsAdding(false);
     }
   };
 
   const handleSendNow = async (f: RawFamily) => {
-    if (!profile?.stellarPublicKey) return alert("No wallet linked to your profile.");
+    if (!profile?.stellarPublicKey) return toast.error("No wallet linked to your profile.");
     
-    const sendAmountInr = prompt(`Enter amount in INR to send to ${f.name}:`, getMonthlyAllowance(f).toString());
     if (!sendAmountInr || Number(sendAmountInr) <= 0) return;
     
     const xlmAmount = (Number(sendAmountInr) / 8.33).toFixed(7);
@@ -82,7 +85,14 @@ export default function FamilyView() {
       const server = getHorizonServer();
       const rpcServer = new rpc.Server(SOROBAN_RPC_URL);
       
-      const { address } = await StellarWalletsKit.authModal();
+      let address = profile?.stellarPublicKey;
+      if (!address) {
+         const auth = await StellarWalletsKit.authModal();
+         address = auth.address;
+      } else {
+         await StellarWalletsKit.setWallet("freighter");
+      }
+      
       const account = await server.loadAccount(address);
       
       const destination = f.payeeIdentifier;
@@ -127,15 +137,23 @@ export default function FamilyView() {
         total_transferred_inr: (f.totalTransferredInr || 0) + Number(sendAmountInr)
       }).eq("id", f.id);
       
-      alert(`Successfully sent ${xlmAmount} XLM to ${f.name}!`);
+      toast.success(`Successfully sent ${xlmAmount} XLM to ${f.name}!`);
       await refreshData();
       
     } catch (err) {
       console.error(err);
-      alert("Failed to send: " + ((err as Error).message || "Unknown error"));
+      toast.error("Failed to send: " + ((err as Error).message || "Unknown error"));
     } finally {
       setSendingTo(null);
+      setShowSendModal(null);
+      setSendAmountInr("");
     }
+  };
+
+  const openSendModal = (f: RawFamily) => {
+    if (!profile?.stellarPublicKey) return toast.error("No wallet linked to your profile.");
+    setSendAmountInr(getMonthlyAllowance(f).toString());
+    setShowSendModal(f);
   };
 
   return (
@@ -219,7 +237,7 @@ export default function FamilyView() {
               </div>
 
               <div style={{ display: "flex", gap: "8px" }}>
-                <button className="btn btn-primary" style={{ flex: 1, padding: "8px", fontSize: "0.875rem", backgroundColor: "var(--color-ink-900)" }} onClick={() => handleSendNow(f)} disabled={sendingTo === f.id}>
+                <button className="btn btn-primary" style={{ flex: 1, padding: "8px", fontSize: "0.875rem", backgroundColor: "var(--color-ink-900)" }} onClick={() => openSendModal(f)} disabled={sendingTo === f.id}>
                   {sendingTo === f.id ? "Sending..." : "Send Now"}
                 </button>
               </div>
@@ -239,15 +257,37 @@ export default function FamilyView() {
             <h3 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#1E293B" }}>Add Family Recipient</h3>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <input type="text" placeholder="Name" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", color: "#000", backgroundColor: "#fff" }} value={newName} onChange={e => setNewName(e.target.value)} />
-              <input type="text" placeholder="Relationship (e.g. Mother)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", color: "#000", backgroundColor: "#fff" }} value={newRelationship} onChange={e => setNewRelationship(e.target.value)} />
-              <input type="text" placeholder="Stellar G-Address" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", color: "#000", backgroundColor: "#fff" }} value={newAddress} onChange={e => setNewAddress(e.target.value)} />
-              <input type="number" placeholder="Monthly Allowance (INR)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", color: "#000", backgroundColor: "#fff" }} value={newAmount} onChange={e => setNewAmount(e.target.value)} />
+              <input type="text" placeholder="Name" className="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-slate-900 focus:outline-none" value={newName} onChange={e => setNewName(e.target.value)} />
+              <input type="text" placeholder="Relationship (e.g. Mother)" className="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-slate-900 focus:outline-none" value={newRelationship} onChange={e => setNewRelationship(e.target.value)} />
+              <input type="text" placeholder="Stellar G-Address" className="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-slate-900 focus:outline-none" value={newAddress} onChange={e => setNewAddress(e.target.value)} />
+              <input type="number" placeholder="Monthly Allowance (INR)" className="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-slate-900 focus:outline-none" value={newAmount} onChange={e => setNewAmount(e.target.value)} />
             </div>
 
             <div style={{ display: "flex", gap: "12px", marginTop: "8px", justifyContent: "flex-end" }}>
               <button className="btn btn-ghost" style={{ padding: "8px 16px", color: "#000" }} onClick={() => setShowAddModal(false)}>Cancel</button>
               <button className="btn btn-primary" style={{ padding: "8px 16px", color: "#fff" }} onClick={handleAddRecipient} disabled={isAdding}>{isAdding ? "Adding..." : "Add"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send Modal */}
+      {showSendModal && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
+          <div className="card" style={{ width: "400px", padding: "24px", display: "flex", flexDirection: "column", gap: "16px", backgroundColor: "#fff", borderRadius: "16px" }}>
+            <h3 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#1E293B" }}>Send to {showSendModal.name}</h3>
+            
+            <input 
+              type="number" 
+              placeholder="Amount (INR)" 
+              className="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-slate-900 focus:outline-none" 
+              value={sendAmountInr} 
+              onChange={e => setSendAmountInr(e.target.value)} 
+            />
+
+            <div style={{ display: "flex", gap: "12px", marginTop: "8px", justifyContent: "flex-end" }}>
+              <button className="btn btn-ghost" style={{ padding: "8px 16px", color: "#000" }} onClick={() => setShowSendModal(null)}>Cancel</button>
+              <button className="btn btn-primary" style={{ padding: "8px 16px", color: "#fff" }} onClick={() => handleSendNow(showSendModal)} disabled={sendingTo === showSendModal.id}>{sendingTo === showSendModal.id ? "Processing..." : "Send"}</button>
             </div>
           </div>
         </div>

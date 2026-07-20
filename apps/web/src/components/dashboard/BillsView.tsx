@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useDashboardContext } from "@/hooks/DashboardContext";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 import type { Bill } from "@/types/domain";
 
 type RawBill = Bill & { next_due_date?: string; is_autopay_enabled?: boolean };
@@ -36,8 +37,8 @@ export default function BillsView() {
     .reduce((sum: number, b: RawBill) => sum + (Number(b.amount) || 0), 0);
 
   const handleAddBill = async () => {
-    if (!profile) return alert("Please connect or login first.");
-    if (!newName || !newPayee || !newAmount) return alert("Please fill all fields.");
+    if (!profile) return toast.error("Please connect or login first.");
+    if (!newName || !newPayee || !newAmount) return toast.error("Please fill all fields.");
     
     // Set due date 7 days from now
     const d = new Date();
@@ -64,9 +65,10 @@ export default function BillsView() {
       setNewPayee("");
       setNewAmount("");
       setNewFrequency("monthly");
+      toast.success("Bill added successfully.");
     } catch (err) {
       console.error(err);
-      alert("Failed to add bill.");
+      toast.error("Failed to add bill.");
     } finally {
       setIsAdding(false);
     }
@@ -180,10 +182,10 @@ export default function BillsView() {
             <h3 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#1E293B" }}>Add New Bill</h3>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <input type="text" placeholder="Bill Name (e.g. Rent, Electricity)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", color: "#000", backgroundColor: "#fff" }} value={newName} onChange={e => setNewName(e.target.value)} />
-              <input type="text" placeholder="Payee (Stellar Address or UPI)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", color: "#000", backgroundColor: "#fff" }} value={newPayee} onChange={e => setNewPayee(e.target.value)} />
-              <input type="number" placeholder="Amount (INR)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", color: "#000", backgroundColor: "#fff" }} value={newAmount} onChange={e => setNewAmount(e.target.value)} />
-              <select className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", backgroundColor: "#fff", color: "#000" }} value={newFrequency} onChange={e => setNewFrequency(e.target.value as "monthly" | "weekly" | "yearly")}>
+              <input type="text" placeholder="Bill Name (e.g. Rent, Electricity)" className="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-slate-900 focus:outline-none" value={newName} onChange={e => setNewName(e.target.value)} />
+              <input type="text" placeholder="Payee (Stellar Address or UPI)" className="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-slate-900 focus:outline-none" value={newPayee} onChange={e => setNewPayee(e.target.value)} />
+              <input type="number" placeholder="Amount (INR)" className="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-slate-900 focus:outline-none" value={newAmount} onChange={e => setNewAmount(e.target.value)} />
+              <select className="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-slate-900 focus:outline-none" value={newFrequency} onChange={e => setNewFrequency(e.target.value as "monthly" | "weekly" | "yearly")}>
                 <option value="monthly">Monthly</option>
                 <option value="weekly">Weekly</option>
                 <option value="yearly">Yearly</option>

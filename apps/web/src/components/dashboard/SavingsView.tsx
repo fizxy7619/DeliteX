@@ -4,14 +4,19 @@ import { useDashboardContext } from "@/hooks/DashboardContext";
 import { useState } from "react";
 import { TransactionBuilder, Contract, Address, nativeToScVal, rpc, BASE_FEE } from "@stellar/stellar-sdk";
 import { getHorizonServer, STELLAR_NETWORK_PASSPHRASE, SOROBAN_RPC_URL } from "@/lib/stellar/config";
+import { toast } from "sonner";
 import { StellarWalletsKit, Networks } from "@creit.tech/stellar-wallets-kit";
 import { FreighterModule } from "@creit.tech/stellar-wallets-kit/modules/freighter";
 import { isConnected as isFreighterConnected } from "@stellar/freighter-api";
 
 export default function SavingsView() {
-  const { vault, refreshData } = useDashboardContext();
+  const { vault, refreshData, profile } = useDashboardContext();
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
+  
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  
   const [isDepositing, setIsDepositing] = useState(false);
 
   const vaultValue = vault ? Number(vault.totalValueUsdc) : 0;
@@ -34,8 +39,14 @@ export default function SavingsView() {
       const server = getHorizonServer();
       const rpcServer = new rpc.Server(SOROBAN_RPC_URL);
       
-      // Request access to get pubkey if not cached
-      const { address } = await StellarWalletsKit.authModal();
+      let address = profile?.stellarPublicKey;
+      if (!address) {
+         const auth = await StellarWalletsKit.authModal();
+         address = auth.address;
+      } else {
+         await StellarWalletsKit.setWallet("freighter");
+      }
+      
       const account = await server.loadAccount(address);
       
       const contract = new Contract(process.env.NEXT_PUBLIC_SOROBAN_VAULT);
@@ -69,16 +80,18 @@ export default function SavingsView() {
       await refreshData();
       setIsDepositModalOpen(false);
       setDepositAmount("");
+      toast.success(`Successfully deposited ${depositAmount} USDC!`);
     } catch (e) {
-      alert("Error: " + (e as Error).message);
+      toast.error("Error: " + (e as Error).message);
     } finally {
       setIsDepositing(false);
     }
   };
 
   const handleWithdraw = async () => {
-    if (vaultValue < 10) {
-      alert("Not enough funds to withdraw 10 USDC!");
+    if (!withdrawAmount || Number(withdrawAmount) <= 0) return;
+    if (vaultValue < Number(withdrawAmount)) {
+      toast.error(`Not enough funds to withdraw ${withdrawAmount} USDC!`);
       return;
     }
     
@@ -96,11 +109,18 @@ export default function SavingsView() {
       const server = getHorizonServer();
       const rpcServer = new rpc.Server(SOROBAN_RPC_URL);
       
-      const { address } = await StellarWalletsKit.authModal();
+      let address = profile?.stellarPublicKey;
+      if (!address) {
+         const auth = await StellarWalletsKit.authModal();
+         address = auth.address;
+      } else {
+         await StellarWalletsKit.setWallet("freighter");
+      }
+      
       const account = await server.loadAccount(address);
       
       const contract = new Contract(process.env.NEXT_PUBLIC_SOROBAN_VAULT);
-      const amountStroops = BigInt(10 * 10000000); // 10 USDC
+      const amountStroops = BigInt(Math.floor(Number(withdrawAmount) * 10000000));
 
       let tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: STELLAR_NETWORK_PASSPHRASE })
         .addOperation(contract.call("withdraw", new Address(address).toScVal(), nativeToScVal(amountStroops, { type: "i128" })))
@@ -125,8 +145,11 @@ export default function SavingsView() {
       
       // Update DB to reflect withdrawal if needed, but fetchVaultBalance handles real balance
       await refreshData();
+      setIsWithdrawModalOpen(false);
+      setWithdrawAmount("");
+      toast.success(`Successfully withdrew ${withdrawAmount} USDC!`);
     } catch (e) {
-      alert("Error: " + (e as Error).message);
+      toast.error("Error: " + (e as Error).message);
     } finally {
       setIsDepositing(false);
     }
@@ -145,11 +168,11 @@ export default function SavingsView() {
           </p>
         </div>
         <div style={{ display: "flex", gap: "12px" }}>
-          <button className="btn btn-ghost" onClick={handleWithdraw} disabled={isDepositing || vaultValue < 10} style={{ fontSize: "0.875rem", padding: "8px 16px", border: "1px solid var(--color-border)" }}>
-            Withdraw $10
+          <button className="btn btn-ghost" onClick={() => setIsWithdrawModalOpen(true)} disabled={isDepositing || vaultValue <= 0} style={{ fontSize: "0.875rem", padding: "8px 16px", border: "1px solid var(--color-border)" }}>
+            Withdraw
           </button>
-          <button className="btn btn-primary" onClick={() => setIsDepositModalOpen(!isDepositModalOpen)} style={{ fontSize: "0.875rem", padding: "8px 16px" }}>
-            Deposit
+          <button className="btn btn-primary" onClick={() => setIsDepositModalOpen(true)} style={{ fontSize: "0.875rem", padding: "8px 16px" }}>
+            Deposit USDC
           </button>
         </div>
       </div>

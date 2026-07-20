@@ -439,6 +439,23 @@ export default function AdminPage() {
                         {amt.toLocaleString()}
                       </button>
                     ))}
+                    <input
+                      type="number"
+                      placeholder="Custom Amount"
+                      value={selectedAmount || ""}
+                      onChange={(e) => setSelectedAmount(Number(e.target.value))}
+                      style={{
+                        padding: "6px 14px",
+                        borderRadius: "6px",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        backgroundColor: "transparent",
+                        color: "rgba(255,255,255,0.9)",
+                        fontSize: "0.8125rem",
+                        fontFamily: "var(--font-body)",
+                        width: "120px",
+                        outline: "none"
+                      }}
+                    />
                   </div>
                   {xlmBalance && parseFloat(xlmBalance.balance) < selectedAmount && (
                     <p style={{ fontSize: "0.75rem", color: "#ff8a7a", marginTop: "6px" }}>
