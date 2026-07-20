@@ -5,9 +5,7 @@ export default function WaitlistSection() {
     <section
       id="waitlist"
       className="section"
-      style={{
-        backgroundColor: "var(--color-ink-900)",
-        borderTop: "1px solid var(--color-ink-700)",
+      style={{ borderTop: "1px solid var(--color-ink-700)",
       }}
     >
       <div className="container-page">
@@ -81,9 +79,7 @@ export default function WaitlistSection() {
 
           {/* Right: form */}
           <div
-            style={{
-              backgroundColor: "var(--color-bg)",
-              border: "1px solid var(--color-border)",
+            style={{ border: "1px solid var(--color-border)",
               borderRadius: "16px",
               padding: "40px",
             }}

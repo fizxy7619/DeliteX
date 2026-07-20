@@ -41,7 +41,7 @@ const pains = [
 
 export default function Problem() {
   return (
-    <section className="section" style={{ backgroundColor: "var(--color-bg)" }}>
+    <section className="section" style={{ }}>
       <div className="container-page">
         {/* Section label */}
         <p className="text-label" style={{ marginBottom: "16px" }}>The problem</p>
@@ -62,45 +62,50 @@ export default function Problem() {
           }}
         >
           {pains.map((item) => (
-            <div
-              key={item.headline}
-              className="card"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "14px",
-              }}
-            >
+            <div key={item.headline} className="problem-card-wrapper">
+              {/* The glowing animated border that appears on hover */}
+              <div className="problem-card-border" />
+              
+              {/* The actual card content */}
               <div
+                className="problem-card-content"
                 style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "8px",
-                  backgroundColor: "var(--color-saffron-light)",
                   display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "var(--color-saffron)",
-                  flexShrink: 0,
+                  flexDirection: "column",
+                  gap: "14px",
                 }}
               >
-                {item.icon}
-              </div>
-              <div>
-                <h3
+                <div
                   style={{
-                    fontFamily: "var(--font-body)",
-                    fontWeight: 600,
-                    fontSize: "1rem",
-                    color: "var(--color-ink-900)",
-                    marginBottom: "6px",
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "8px",
+                    backgroundColor: "var(--color-saffron-light)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "var(--color-saffron)",
+                    flexShrink: 0,
                   }}
                 >
-                  {item.headline}
-                </h3>
-                <p style={{ fontSize: "0.9rem", color: "var(--color-ink-500)", lineHeight: 1.6 }}>
-                  {item.body}
-                </p>
+                  {item.icon}
+                </div>
+                <div>
+                  <h3
+                    style={{
+                      fontFamily: "var(--font-body)",
+                      fontWeight: 600,
+                      fontSize: "1rem",
+                      color: "var(--color-ink-900)",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    {item.headline}
+                  </h3>
+                  <p style={{ fontSize: "0.9rem", color: "var(--color-ink-500)", lineHeight: 1.6 }}>
+                    {item.body}
+                  </p>
+                </div>
               </div>
             </div>
           ))}

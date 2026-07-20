@@ -44,7 +44,7 @@ export default function Solution() {
   return (
     <section
       className="section"
-      style={{ backgroundColor: "#fff", borderTop: "1px solid var(--color-border)", borderBottom: "1px solid var(--color-border)" }}
+      style={{ borderTop: "1px solid var(--color-border)", borderBottom: "1px solid var(--color-border)" }}
     >
       <div className="container-page">
         <p className="text-label" style={{ marginBottom: "16px" }}>The solution</p>

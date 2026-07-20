@@ -4,9 +4,9 @@ export default function Hero() {
   return (
     <section
       style={{
-        paddingTop: "clamp(72px, 10vw, 120px)",
+        paddingTop: "clamp(120px, 12vw, 160px)",
         paddingBottom: "clamp(72px, 10vw, 120px)",
-        borderBottom: "1px solid var(--color-border)",
+        borderBottom: "1px solid rgba(255, 255, 255, 0.15)",
       }}
     >
       <div className="container-page">
@@ -17,8 +17,8 @@ export default function Hero() {
               display: "inline-flex",
               alignItems: "center",
               gap: "8px",
-              backgroundColor: "var(--color-saffron-light)",
-              border: "1px solid rgba(232,135,42,0.25)",
+              backgroundColor: "rgba(232, 135, 42, 0.15)",
+              border: "1px solid rgba(232,135,42,0.3)",
               borderRadius: "100px",
               padding: "6px 14px",
               marginBottom: "32px",
@@ -49,12 +49,13 @@ export default function Hero() {
           {/* Headline */}
           <h1
             className="text-display animate-fade-up"
-            style={{ marginBottom: "24px" }}
+            style={{ marginBottom: "24px", color: "#ffffff" }}
           >
             An agentic wallet for{" "}
             <em style={{ fontStyle: "italic", color: "var(--color-saffron)" }}>
               global income
             </em>{" "}
+            <br className="hidden md:block" />
             and{" "}
             <em style={{ fontStyle: "italic" }}>local life</em>{" "}
             in India.
@@ -66,9 +67,9 @@ export default function Hero() {
             style={{
               fontFamily: "var(--font-body)",
               fontSize: "clamp(1.0625rem, 2vw, 1.2rem)",
-              color: "var(--color-ink-700)",
+              color: "rgba(255, 255, 255, 0.8)",
               lineHeight: 1.65,
-              maxWidth: "580px",
+              maxWidth: "640px",
               marginBottom: "48px",
             }}
           >
@@ -88,13 +89,13 @@ export default function Hero() {
               marginBottom: "64px",
             }}
           >
-            <Link href="/login" className="btn btn-saffron btn-large">
+            <Link href="/login" className="btn btn-saffron btn-large" style={{ borderRadius: "100px" }}>
               Get started
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </Link>
-            <a href="#how-it-works" className="btn btn-ghost btn-large">
+            <a href="#how-it-works" className="btn btn-ghost btn-large" style={{ color: "white", borderColor: "rgba(255,255,255,0.2)", borderRadius: "100px" }}>
               See how it works
             </a>
           </div>
@@ -107,7 +108,7 @@ export default function Hero() {
               flexWrap: "wrap",
               gap: "24px",
               paddingTop: "32px",
-              borderTop: "1px solid var(--color-border)",
+              borderTop: "1px solid rgba(255, 255, 255, 0.15)",
             }}
           >
             {[
@@ -119,8 +120,8 @@ export default function Hero() {
                 <p
                   style={{
                     fontFamily: "var(--font-display)",
-                    fontSize: "1.5rem",
-                    color: "var(--color-ink-900)",
+                    fontSize: "1.75rem",
+                    color: "#ffffff",
                     lineHeight: 1.2,
                   }}
                 >
@@ -128,10 +129,10 @@ export default function Hero() {
                 </p>
                 <p
                   style={{
-                    fontSize: "0.8125rem",
-                    color: "var(--color-ink-500)",
+                    fontSize: "0.875rem",
+                    color: "rgba(255, 255, 255, 0.6)",
                     fontWeight: 500,
-                    marginTop: "2px",
+                    marginTop: "4px",
                   }}
                 >
                   {stat.label}

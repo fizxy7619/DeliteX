@@ -29,9 +29,7 @@ const links = {
 export default function Footer() {
   return (
     <footer
-      style={{
-        backgroundColor: "var(--color-bg)",
-        borderTop: "1px solid var(--color-border)",
+      style={{ borderTop: "1px solid var(--color-border)",
         paddingTop: "64px",
         paddingBottom: "40px",
       }}

@@ -110,7 +110,7 @@ export default function FAQ() {
     <section
       id="faq"
       className="section"
-      style={{ backgroundColor: "#fff", borderTop: "1px solid var(--color-border)" }}
+      style={{ borderTop: "1px solid var(--color-border)" }}
     >
       <div className="container-page">
         <div

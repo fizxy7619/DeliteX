@@ -34,7 +34,7 @@ export default function SocialProof() {
   return (
     <section
       className="section"
-      style={{ backgroundColor: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}
+      style={{ borderBottom: "1px solid var(--color-border)" }}
     >
       <div className="container-page">
         {/* Stats row */}
@@ -98,7 +98,6 @@ export default function SocialProof() {
                 border: "1px solid var(--color-border)",
                 borderRadius: "8px",
                 padding: "14px 24px",
-                backgroundColor: "#fff",
                 fontSize: "0.875rem",
                 fontWeight: 600,
                 color: "var(--color-ink-500)",

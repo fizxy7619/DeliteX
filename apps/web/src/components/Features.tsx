@@ -67,7 +67,7 @@ const features = [
 
 export default function Features() {
   return (
-    <section id="features" className="section" style={{ backgroundColor: "var(--color-bg)" }}>
+    <section id="features" className="section" style={{ }}>
       <div className="container-page">
         <p className="text-label" style={{ marginBottom: "16px" }}>Core features</p>
 
