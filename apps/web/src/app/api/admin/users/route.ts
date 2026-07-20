@@ -10,7 +10,7 @@ export async function GET() {
   // Fetch all users who have a stellar_public_key linked
   const { data, error } = await supabaseAdmin
     .from("user_profiles")
-    .select("id, full_name, email, stellar_public_key")
+    .select("id, full_name, stellar_public_key")
     .not("stellar_public_key", "is", null);
 
   if (error) {
