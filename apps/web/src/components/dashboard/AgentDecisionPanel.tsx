@@ -59,7 +59,7 @@ export default function AgentDecisionPanel({ decisionId, proposal, onExecuted, o
             selectedWalletId: storedWallet, // Use the dynamically saved wallet ID from login
             modules: [new FreighterModule(), new xBullModule(), new AlbedoModule()],
           });
-        } catch (e) {
+        } catch {
           // ignore if already initialized
         }
 
@@ -70,6 +70,7 @@ export default function AgentDecisionPanel({ decisionId, proposal, onExecuted, o
         // 3. Submit to Stellar testnet via Soroban RPC
         const rpcServer = new rpc.Server("https://soroban-testnet.stellar.org");
         const tx = TransactionBuilder.fromXDR(signResult.signedTxXdr, "Test SDF Network ; September 2015");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const submitRes = await rpcServer.sendTransaction(tx as any);
         
         if (submitRes.status === "ERROR") {

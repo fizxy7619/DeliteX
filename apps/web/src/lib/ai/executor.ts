@@ -137,6 +137,7 @@ export async function buildExecutionXdr(decisionId: string, userId: string): Pro
   // If there's a Soroban operation, simulate and attach footprint
   if (proposal.items.some(i => i.bucket === "savings")) {
     const rpcServer = new rpc.Server(SOROBAN_RPC_URL);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     transaction = (await rpcServer.prepareTransaction(transaction)) as any;
   }
 
