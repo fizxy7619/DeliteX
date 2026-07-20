@@ -10,6 +10,7 @@ import SavingsView from "@/components/dashboard/SavingsView";
 import RulesEditor from "@/components/dashboard/RulesEditor";
 import StellarView from "@/components/dashboard/StellarView";
 import AgentHistoryView from "@/components/dashboard/AgentHistoryView";
+import DemoBar from "@/components/dashboard/DemoBar";
 
 const SECTION_TITLES: Record<Section, string> = {
   overview: "Overview",
@@ -44,7 +45,9 @@ export default function DashboardShell({ userEmail }: DashboardShellProps) {
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "var(--color-bg)" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <DemoBar />
+      <div style={{ display: "flex", flex: 1, backgroundColor: "var(--color-bg)" }}>
       <Sidebar
         activeSection={activeSection}
         onNavigate={setActiveSection}
@@ -79,6 +82,7 @@ export default function DashboardShell({ userEmail }: DashboardShellProps) {
           main { padding: 24px 16px 100px !important; }
         }
       `}</style>
+      </div>
     </div>
   );
 }
