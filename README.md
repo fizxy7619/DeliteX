@@ -14,11 +14,21 @@ Delite is a **Soroban-powered Agentic Payment OS** deployed on **Stellar Testnet
 
 | Resource             | Value                                                      |
 | -------------------- | ---------------------------------------------------------- |
-| **Live Demo**        | *(Add your live deployment link here)*                     |
+| **Live Demo**        | [https://delite-x-web.vercel.app/](https://delite-x-web.vercel.app/) |
 | **Vault Contract**   | `CC7Z3ALJMFFI3ICBTLJQGZQTA3XPIWCEOSBO3TMQQD52A3FQFM6VLVYS` |
 | **Router Contract**  | `CAKXHCLWKWLETL532QDVC7XHCMUSMMFJCA34IT5SJT2LDTKUMOH6WBRW` |
 | **Network**          | Stellar Testnet                                            |
 | **Soroban RPC**      | `https://soroban-testnet.stellar.org`                      |
+
+---
+
+## The Problem & Our Solution
+
+### The Problem
+Global workers, freelancers, and NRIs face high fees, slow settlement times, and manual overhead when managing cross-border income. Traditional remittance involves intermediaries, hidden FX spreads, and manual routing of funds for bills, savings, and family support.
+
+### The Solution
+Delite is a unified **Agentic Remittance & Payments OS** built on the Stellar network. It provides instant, near-zero fee cross-border settlements with an AI-powered smart router. Users declare their financial goals in plain English (e.g., *"Save 30%, send 20% to family"*), and the AI configures an on-chain Soroban smart contract to autonomously route incoming funds to decentralized yield vaults, family wallets, and bill-pay endpoints.
 
 ---
 
@@ -39,21 +49,27 @@ Delite is a **Soroban-powered Agentic Payment OS** deployed on **Stellar Testnet
 ## Architecture
 
 ```text
- ┌────────────────┐   sign tx (XDR)    ┌──────────────────────────────────┐
- │ Stellar wallet │ ◀───────────────── │  Delite web app (Next.js)        │
- │ (Freighter)    │ ─signed XDR──────▶ │  /dashboard · /allocations       │
- └────────────────┘                    └──────────┬───────────────────────┘
-                                                  │ Horizon / Soroban RPC
-                                                  ▼
-                                       ┌──────────────────────┐
-                                       │  Soroban Router      │
-                                       │  (Agentic splits)    │
-                                       └──────────┬───────────┘
-                                                  ▼
-                                       ┌──────────────────────┐
-                                       │  Soroban Vault       │
-                                       │  (Yield Generation)  │
-                                       └──────────────────────┘
+ ┌────────────────┐                                ┌──────────────────────────────────────────┐
+ │ User Wallet    │ ── (Natural Language) ──▶ │ Delite AI Agent (Nemotron-4-340B)      │
+ └────────────────┘                                └──────────────────────────────────────────┘
+         │                                                            │ (Generates Allocations)
+         ▼                                                            ▼
+ ┌────────────────┐      sign tx (XDR)             ┌──────────────────────────────────────────┐
+ │ Stellar Wallet │ ◀───────────────────────────── │ Next.js Dashboard (Frontend OS)        │
+ │ (Freighter)    │ ── signed XDR ───────────────▶ │ /dashboard · /ai-agent · /rules        │
+ └────────────────┘                                └──────────┬───────────────────────────────┘
+                                                              │ Horizon / Soroban RPC
+                                                              ▼
+                                                   ┌──────────────────────────────────────────┐
+                                                   │ Soroban Smart Contract Router            │
+                                                   │ (Trustless, On-chain Execution)          │
+                                                   └──────────┬──────────────────────┬────────┘
+                                                              │                      │
+                                                              ▼                      ▼
+                                            ┌──────────────────────┐      ┌──────────────────────┐
+                                            │ Family / Remittance  │      │ Soroban DeFi Vault   │
+                                            │ (Instant Settlement) │      │ (Yield Generation)   │
+                                            └──────────────────────┘      └──────────────────────┘
 ```
 
 ---
@@ -61,25 +77,29 @@ Delite is a **Soroban-powered Agentic Payment OS** deployed on **Stellar Testnet
 ## Project Structure
 
 ```text
-delite/
+DeliteX/
 ├── apps/
-│   └── web/                   Next.js App Router frontend
-│       ├── src/app/           Pages and API routes
-│       └── src/components/    React components (Dashboard, StellarView)
+│   └── web/                       # Next.js 14 App Router (Frontend & API)
+│       ├── public/Screenshots/    # Application screenshots & assets
+│       ├── src/app/               # App Router pages (Dashboard, Login) & API routes
+│       ├── src/components/        # React components (AiAssistant, RulesEditor, Vault)
+│       ├── src/hooks/             # Global state (DashboardContext, useDashboardData)
+│       └── src/lib/ai/            # AI intent parsing & NVIDIA NIM integrations
 │
 ├── packages/
-│   ├── contracts/             Rust Soroban contracts
-│   │   ├── router/            Agent allocation logic
-│   │   ├── vault/             Yield generation vault
-│   │   └── scripts/           Testnet deployment pipeline (`deploy.js`)
+│   ├── contracts/                 # Rust Soroban smart contracts
+│   │   ├── router/                # On-chain payment splitting and allocation logic
+│   │   ├── vault/                 # ERC-4626 style yield-generation vault
+│   │   └── scripts/               # Testnet deployment automation (`deploy.js`)
 │   │
-│   ├── ui/                    Shared shadcn/ui React components
-│   ├── config-eslint/         Monorepo linting rules
-│   └── config-typescript/     Monorepo TS configs
+│   ├── ui/                        # Shared UI components and design system
+│   ├── config-eslint/             # Monorepo ESLint configurations
+│   └── config-typescript/         # Monorepo TypeScript configurations
 │
-├── .env.example               Environment variable template
-├── package.json               Turborepo root config
-└── pnpm-workspace.yaml
+├── supabase/                      # Database migrations & schema definitions
+├── .github/workflows/             # CI/CD pipelines (Lint, Build, Deploy)
+├── package.json                   # Turborepo root configuration
+└── pnpm-workspace.yaml            # PNPM workspace definition
 ```
 
 ---
@@ -124,28 +144,31 @@ Open `http://localhost:3000` with your browser to experience the Delite OS.
 
 ## Screenshots
 
-*(Replace the placeholders below with actual screenshots of your application)*
+### Landing Page
+![Landing Page](apps/web/public/Screenshots/Landing%20Page.png)
+*The modern, glassmorphic entry point into the Delite ecosystem.*
 
 ### Dashboard
-![Dashboard](docs/screenshots/Dashboard.png)
+![Dashboard](apps/web/public/Screenshots/Dashbaord.png)
+*The central hub to monitor your Stellar Testnet XLM balance, active smart contract positions, and incoming payment events.*
 
-Shows the main Delite dashboard, wallet connection, and testnet XLM balance.
+### Agentic AI
+![Agentic AI](apps/web/public/Screenshots/Agentic%20Ai.png)
+*Our AI agent, powered by NVIDIA Nemotron-4-340B, translates plain English financial goals into structured smart-contract allocation rules.*
 
-### Agent Allocation Flow
-![Allocation Success](docs/screenshots/Allocation.png)
+### Family & Remittance
+![Family & Remittance](apps/web/public/Screenshots/Family%20&%20Remitance.png)
+*Manage global recipients and simulate cross-border fund routing instantly via the Soroban Router.*
 
-Triggering the smart contract router to split incoming payments.
-
-### Transaction Hash
-![Transaction Hash](docs/screenshots/Transaction.png)
-
-A crop of the transaction hash details as shown after a smart contract execution.
+### CI/CD Pipeline
+![CI CD Pipeline](apps/web/public/Screenshots/CI%20CD%20Pipeline.png)
+*Automated Turborepo workflows ensuring type-safety, linting, and rapid deployment on every commit.*
 
 ---
 
 ## Deployed Contract Information
 
-- **Live Demo Link:** *(Your live deployment URL)*
+- **Live Demo Link:** [https://delite-x-web.vercel.app/](https://delite-x-web.vercel.app/)
 - **Vault Contract Address:** `CC7Z3ALJMFFI3ICBTLJQGZQTA3XPIWCEOSBO3TMQQD52A3FQFM6VLVYS`
 - **Router Contract Address:** `CAKXHCLWKWLETL532QDVC7XHCMUSMMFJCA34IT5SJT2LDTKUMOH6WBRW`
 - **Network:** Stellar Testnet
