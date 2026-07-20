@@ -64,7 +64,7 @@ export default function StellarView() {
   const [funding, setFunding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [quote, setQuote] = useState<FxQuote | null>(null);
-  const [x402Demo, setX402Demo] = useState<{ status: string; detail: string } | null>(null);
+  const [testTxResult, setTestTxResult] = useState<{ status: string; detail: string } | null>(null);
   const [x402Loading, setX402Loading] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [connecting, setConnecting] = useState(false);
@@ -151,7 +151,7 @@ export default function StellarView() {
 
   async function sendTestTransaction() {
     setX402Loading(true);
-    setX402Demo(null);
+    setTestTxResult(null);
     try {
       if (!account?.publicKey) throw new Error("No account connected.");
       const server = getHorizonServer();
@@ -180,13 +180,13 @@ export default function StellarView() {
       const txToSubmit = TransactionBuilder.fromXDR(signResult.signedTxXdr, STELLAR_NETWORK_PASSPHRASE);
       const result = await server.submitTransaction(txToSubmit);
 
-      setX402Demo({
+      setTestTxResult({
         status: "success",
         detail: `✓ Transaction successful! Hash: ${result.hash}`,
       });
       fetchAccount(); // refresh balance
     } catch (e) {
-      setX402Demo({ status: "error", detail: (e as Error).message });
+      setTestTxResult({ status: "error", detail: (e as Error).message });
     } finally {
       setX402Loading(false);
     }
@@ -368,18 +368,18 @@ export default function StellarView() {
           </button>
         </div>
 
-        {x402Demo && (
+        {testTxResult && (
           <div style={{
             marginTop: "16px", padding: "14px 16px", borderRadius: "8px",
-            backgroundColor: x402Demo.status === "success" ? "var(--color-jade-light)" : "#FEF2F2",
-            border: `1px solid ${x402Demo.status === "success" ? "rgba(43,122,90,0.3)" : "rgba(192,57,43,0.3)"}`,
+            backgroundColor: testTxResult.status === "success" ? "var(--color-jade-light)" : "#FEF2F2",
+            border: `1px solid ${testTxResult.status === "success" ? "rgba(43,122,90,0.3)" : "rgba(192,57,43,0.3)"}`,
           }}>
             <p style={{
               fontSize: "0.875rem", fontFamily: "monospace",
-              color: x402Demo.status === "success" ? "var(--color-jade)" : "#C0392B",
+              color: testTxResult.status === "success" ? "var(--color-jade)" : "#C0392B",
               wordBreak: "break-all"
             }}>
-              {x402Demo.detail}
+              {testTxResult.detail}
             </p>
           </div>
         )}

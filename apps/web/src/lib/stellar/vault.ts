@@ -26,7 +26,7 @@ export async function fetchVaultBalance(publicKey: string): Promise<number> {
 
     const sim = await server.simulateTransaction(tx);
     
-    if (rpc.Api.isSimulationSuccess(sim)) {
+    if (rpc.Api.isSimulationSuccess(sim) && sim.result) {
       const resultScVal = sim.result.retval;
       // Convert to native JS number. The contract returns an i128 (stroops).
       const stroops = scValToNative(resultScVal);

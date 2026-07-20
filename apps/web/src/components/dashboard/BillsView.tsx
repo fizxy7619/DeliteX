@@ -10,7 +10,7 @@ export default function BillsView() {
   const [filter, setFilter] = useState<"all" | "upcoming" | "paid">("all");
   const [isAdding, setIsAdding] = useState(false);
 
-  const today = new Date("2026-07-16").toISOString().split("T")[0]; // Mocking today for demo logic
+  const today = new Date().toISOString().split("T")[0];
 
   // Handle both camelCase (domain type) and snake_case (raw DB row)
   const getNextDueDate = (b: RawBill) => b.nextDueDate || b.next_due_date || "";

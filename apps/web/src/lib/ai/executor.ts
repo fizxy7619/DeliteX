@@ -34,7 +34,7 @@ function getServiceClient() {
   );
 }
 
-const VAULT_CONTRACT_ID = process.env.NEXT_PUBLIC_SOROBAN_VAULT || "CC7Z3ALJMFFI3ICBTLJQGZQTA3XPIWCEOSBO3TMQQD52A3FQFM6VLVYS";
+const VAULT_CONTRACT_ID = process.env.NEXT_PUBLIC_SOROBAN_VAULT || "CAQFOWQLHE3BBOAGMJZNPCIASUOSJJCUQLJE6V6VSMW7H7ST4OOHD77C";
 
 
 import { TransactionBuilder, Operation, BASE_FEE, Asset, Contract, Address, nativeToScVal, rpc } from "@stellar/stellar-sdk";

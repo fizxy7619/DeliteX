@@ -2,6 +2,11 @@
 
 import { useDashboardContext } from "@/hooks/DashboardContext";
 import { useState } from "react";
+import { TransactionBuilder, Contract, Address, nativeToScVal, rpc, BASE_FEE } from "@stellar/stellar-sdk";
+import { getHorizonServer, STELLAR_NETWORK_PASSPHRASE, SOROBAN_RPC_URL } from "@/lib/stellar/config";
+import { StellarWalletsKit, Networks } from "@creit.tech/stellar-wallets-kit";
+import { FreighterModule } from "@creit.tech/stellar-wallets-kit/modules/freighter";
+import { isConnected as isFreighterConnected } from "@stellar/freighter-api";
 
 export default function SavingsView() {
   const { vault, refreshData } = useDashboardContext();
@@ -17,12 +22,49 @@ export default function SavingsView() {
     if (!depositAmount || Number(depositAmount) <= 0) return;
     setIsDepositing(true);
     try {
-      const res = await fetch("/api/vault/deposit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amountUsdc: Number(depositAmount), strategy: "conservative" })
+      if (!process.env.NEXT_PUBLIC_SOROBAN_VAULT) throw new Error("Vault not configured");
+      const publicKey = localStorage.getItem("delite_wallet_pubkey") || vault?.userId; // Assuming profile pubkey is known or we can get it from Freighter
+      
+      StellarWalletsKit.init({
+        network: Networks.TESTNET,
+        selectedWalletId: "freighter",
+        modules: [new FreighterModule()],
       });
-      if (!res.ok) throw new Error("Deposit failed");
+      await isFreighterConnected();
+      
+      const server = getHorizonServer();
+      const rpcServer = new rpc.Server(SOROBAN_RPC_URL);
+      
+      // Request access to get pubkey if not cached
+      const { address } = await StellarWalletsKit.authModal();
+      const account = await server.loadAccount(address);
+      
+      const contract = new Contract(process.env.NEXT_PUBLIC_SOROBAN_VAULT);
+      const amountStroops = BigInt(Math.floor(Number(depositAmount) * 10000000));
+
+      let tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: STELLAR_NETWORK_PASSPHRASE })
+        .addOperation(contract.call("deposit", new Address(address).toScVal(), new Address(address).toScVal(), nativeToScVal(amountStroops, { type: "i128" })))
+        .setTimeout(300).build();
+
+      tx = await rpcServer.prepareTransaction(tx) as any;
+      const signResult = await StellarWalletsKit.signTransaction(tx.toXDR(), { networkPassphrase: STELLAR_NETWORK_PASSPHRASE });
+      
+      const txToSubmit = TransactionBuilder.fromXDR(signResult.signedTxXdr, STELLAR_NETWORK_PASSPHRASE);
+      const submitRes = await rpcServer.sendTransaction(txToSubmit as any);
+      
+      if (submitRes.status === "ERROR") throw new Error("Submission failed");
+      
+      // Poll
+      for (let i = 0; i < 15; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        const status = await rpcServer.getTransaction(submitRes.hash);
+        if (status.status === "SUCCESS") break;
+        if (status.status === "FAILED") throw new Error("Transaction failed on-chain");
+      }
+      
+      // Also notify backend to update DB if needed, but since we fetch from contract, just refresh
+      // await fetch("/api/vault/deposit", { method: "POST", body: JSON.stringify({ amountUsdc: Number(depositAmount), strategy: "conservative" }) });
+      
       await refreshData();
       setIsDepositModalOpen(false);
       setDepositAmount("");
@@ -34,7 +76,6 @@ export default function SavingsView() {
   };
 
   const handleWithdraw = async () => {
-    // For simplicity, just withdraw 10 USDC
     if (vaultValue < 10) {
       alert("Not enough funds to withdraw 10 USDC!");
       return;
@@ -42,22 +83,44 @@ export default function SavingsView() {
     
     setIsDepositing(true);
     try {
-      const posRes = await fetch("/api/vault/positions");
-      if (!posRes.ok) throw new Error("Failed to fetch positions");
-      const { positions } = await posRes.json();
-      const activePosition = positions.find((p: { status: string; id: string }) => p.status === "active");
+      if (!process.env.NEXT_PUBLIC_SOROBAN_VAULT) throw new Error("Vault not configured");
       
-      if (!activePosition) {
-        setIsDepositing(false);
-        return alert("No active position found.");
-      }
-
-      const res = await fetch("/api/vault/withdraw", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ positionId: activePosition.id, amountUsdc: 10 })
+      StellarWalletsKit.init({
+        network: Networks.TESTNET,
+        selectedWalletId: "freighter",
+        modules: [new FreighterModule()],
       });
-      if (!res.ok) throw new Error("Withdraw failed");
+      await isFreighterConnected();
+      
+      const server = getHorizonServer();
+      const rpcServer = new rpc.Server(SOROBAN_RPC_URL);
+      
+      const { address } = await StellarWalletsKit.authModal();
+      const account = await server.loadAccount(address);
+      
+      const contract = new Contract(process.env.NEXT_PUBLIC_SOROBAN_VAULT);
+      const amountStroops = BigInt(10 * 10000000); // 10 USDC
+
+      let tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: STELLAR_NETWORK_PASSPHRASE })
+        .addOperation(contract.call("withdraw", new Address(address).toScVal(), nativeToScVal(amountStroops, { type: "i128" })))
+        .setTimeout(300).build();
+
+      tx = await rpcServer.prepareTransaction(tx) as any;
+      const signResult = await StellarWalletsKit.signTransaction(tx.toXDR(), { networkPassphrase: STELLAR_NETWORK_PASSPHRASE });
+      
+      const txToSubmit = TransactionBuilder.fromXDR(signResult.signedTxXdr, STELLAR_NETWORK_PASSPHRASE);
+      const submitRes = await rpcServer.sendTransaction(txToSubmit as any);
+      
+      if (submitRes.status === "ERROR") throw new Error("Submission failed");
+      
+      for (let i = 0; i < 15; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        const status = await rpcServer.getTransaction(submitRes.hash);
+        if (status.status === "SUCCESS") break;
+        if (status.status === "FAILED") throw new Error("Transaction failed on-chain");
+      }
+      
+      // Update DB to reflect withdrawal if needed, but fetchVaultBalance handles real balance
       await refreshData();
     } catch (e) {
       alert("Error: " + (e as Error).message);
