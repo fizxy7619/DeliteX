@@ -63,7 +63,7 @@ export default function FamilyView() {
                 <div>
                   <p style={{ fontWeight: 600, color: "var(--color-ink-900)" }}>{f.name}</p>
                   <p style={{ fontSize: "0.75rem", color: "var(--color-ink-500)", marginTop: "2px" }}>
-                    {f.relation} · {f.destinationBank}
+                    {f.relationship} · {f.payeeLabel}
                   </p>
                 </div>
               </div>

@@ -5,7 +5,7 @@ export default function SavingsView() {
 
   const vaultValue = vault ? Number(vault.totalValueUsdc) : 0;
   const yieldEarned = vault ? Number(vault.yieldEarnedUsdc) : 0;
-  const apy = vault ? vault.currentApy : 5.25;
+  const apy = vault ? vault.estimatedApyPercent : 5.25;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>

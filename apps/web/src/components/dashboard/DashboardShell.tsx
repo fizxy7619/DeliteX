@@ -14,9 +14,11 @@ import DemoBar from "@/components/dashboard/DemoBar";
 import { DashboardProvider, useDashboardContext } from "@/hooks/DashboardContext";
 import {
   StellarWalletsKit,
-  WalletNetwork,
-  allowAllModules,
+  Networks,
 } from "@creit.tech/stellar-wallets-kit";
+import { FreighterModule } from "@creit.tech/stellar-wallets-kit/modules/freighter";
+import { xBullModule } from "@creit.tech/stellar-wallets-kit/modules/xbull";
+import { AlbedoModule } from "@creit.tech/stellar-wallets-kit/modules/albedo";
 
 const SECTION_TITLES: Record<Section, string> = {
   overview: "Overview",
@@ -42,30 +44,20 @@ function DashboardContent({ userEmail }: { userEmail: string }) {
   async function handleConnectWallet() {
     try {
       setFunding(true);
-      const kit = new StellarWalletsKit({
-        network: WalletNetwork.TESTNET,
+      StellarWalletsKit.init({
+        network: Networks.TESTNET,
         selectedWalletId: "freighter",
-        modules: allowAllModules(),
+        modules: [new FreighterModule(), new xBullModule(), new AlbedoModule()],
       });
       
-      await kit.openModal({
-        onWalletSelected: async (option) => {
-          try {
-            kit.setWallet(option.id);
-            const publicKey = await kit.getPublicKey();
-            
-            // Save to Supabase
-            await updateStellarPublicKey(publicKey);
+      const { address: publicKey } = await StellarWalletsKit.authModal();
+      
+      // Save to Supabase
+      await updateStellarPublicKey(publicKey);
 
-            // Trigger fund check
-            await fetch(`/api/stellar/account?fund=true`);
-            await refreshStellar();
-          } catch (e) {
-            console.error("Wallet connection failed:", e);
-            alert("Failed to connect wallet: " + (e as Error).message);
-          }
-        },
-      });
+      // Trigger fund check
+      await fetch(`/api/stellar/account?fund=true`);
+      await refreshStellar();
     } catch (err) {
       console.error(err);
     } finally {

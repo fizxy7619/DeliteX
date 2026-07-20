@@ -103,7 +103,7 @@ export function useDashboardData() {
           setStellarAccount({ ...data.accountInfo, isNew: data.isNew });
         }
         // Reload profile if we just generated a key
-        if (data.publicKey && !profile?.stellar_public_key) {
+        if (data.publicKey && !profile?.stellarPublicKey) {
           await fetchData();
         }
         return { success: true, data };

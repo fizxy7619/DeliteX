@@ -33,7 +33,7 @@ export default function RulesEditor() {
               <div>
                 <p style={{ fontWeight: 600, color: "var(--color-ink-900)" }}>{r.name}</p>
                 <p style={{ fontSize: "0.875rem", color: "var(--color-ink-500)", marginTop: "4px", fontFamily: "var(--font-mono)" }}>
-                  {r.condition} {'->'} {r.action}
+                  {r.incomeSourceFilter || "Any income"} {'->'} {r.allocations.map(a => `${a.percent}% ${a.bucket}`).join(', ')}
                 </p>
               </div>
             </div>
