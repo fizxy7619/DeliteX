@@ -85,7 +85,7 @@ function MessageBubble({ msg, pendingIntent, onApply, onDismiss }: {
             ✦
           </div>
         )}
-        <div style={{ maxWidth: "75%", padding: "11px 15px", borderRadius: isUser ? "16px 16px 4px 16px" : "16px 16px 16px 4px", backgroundColor: isUser ? "var(--color-ink-900)" : "#fff", color: isUser ? "#fff" : "var(--color-ink-700)", fontSize: "0.875rem", lineHeight: 1.65, border: isUser ? "none" : "1px solid var(--color-border)", boxShadow: isUser ? "none" : "0 1px 3px rgba(0,0,0,0.04)" }}>
+        <div style={{ maxWidth: "75%", padding: "11px 15px", borderRadius: isUser ? "16px 16px 4px 16px" : "16px 16px 16px 4px", backgroundColor: isUser ? "var(--color-ink-900)" : "var(--color-bg-card)", color: isUser ? "#fff" : "var(--color-ink-700)", fontSize: "0.875rem", lineHeight: 1.65, border: isUser ? "none" : "1px solid var(--color-border)", boxShadow: isUser ? "none" : "0 1px 3px rgba(0,0,0,0.04)" }}>
           {msg.content}
         </div>
       </div>
@@ -257,7 +257,7 @@ export default function AiAssistant({ onPendingDecision }: { onPendingDecision?:
         {loading && (
           <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", marginBottom: "14px" }}>
             <div style={{ width: "28px", height: "28px", borderRadius: "50%", backgroundColor: "var(--color-jade-light)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-jade)", fontSize: "0.7rem", fontWeight: 700 }}>✦</div>
-            <div style={{ padding: "12px 16px", borderRadius: "16px 16px 16px 4px", backgroundColor: "#fff", border: "1px solid var(--color-border)", display: "flex", gap: "5px", alignItems: "center" }}>
+            <div style={{ padding: "12px 16px", borderRadius: "16px 16px 16px 4px", backgroundColor: "var(--color-bg-card)", border: "1px solid var(--color-border)", display: "flex", gap: "5px", alignItems: "center" }}>
               {[0, 0.15, 0.3].map((d, i) => (
                 <span key={i} style={{ width: "7px", height: "7px", borderRadius: "50%", backgroundColor: "var(--color-jade)", animation: "pulse-dot 1.2s infinite ease-in-out", animationDelay: `${d}s`, display: "block" }} />
               ))}
@@ -270,7 +270,7 @@ export default function AiAssistant({ onPendingDecision }: { onPendingDecision?:
       {/* Suggestions */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
         {SUGGESTIONS.map((s) => (
-          <button key={s} onClick={() => sendMessage(s)} disabled={loading} style={{ padding: "6px 14px", border: "1px solid var(--color-border)", borderRadius: "100px", backgroundColor: "#fff", fontSize: "0.8125rem", color: "var(--color-ink-700)", cursor: "pointer", fontFamily: "var(--font-body)", transition: "border-color 0.15s" }}>
+          <button key={s} onClick={() => sendMessage(s)} disabled={loading} style={{ padding: "6px 14px", border: "1px solid var(--color-border)", borderRadius: "100px", backgroundColor: "var(--color-bg-card)", fontSize: "0.8125rem", color: "var(--color-ink-700)", cursor: "pointer", fontFamily: "var(--font-body)", transition: "border-color 0.15s" }}>
             {s}
           </button>
         ))}

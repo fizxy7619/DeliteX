@@ -16,7 +16,7 @@ export default function RulesEditor() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {rules.length === 0 ? (
-          <div style={{ padding: "40px", textAlign: "center", backgroundColor: "#fff", color: "var(--color-ink-500)", fontSize: "0.875rem", borderRadius: "12px", border: "1px solid var(--color-border)" }}>
+          <div style={{ padding: "40px", textAlign: "center", backgroundColor: "var(--color-bg-card)", color: "var(--color-ink-500)", fontSize: "0.875rem", borderRadius: "12px", border: "1px solid var(--color-border)" }}>
             No allocation rules configured yet.
           </div>
         ) : rules.map((r) => (
