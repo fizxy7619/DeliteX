@@ -58,7 +58,7 @@ export default function OverviewView() {
 
   // Real data parsing
   const usdcBalance = parseFloat(stellarAccount?.balances.find(b => b.asset === "USDC")?.balance || "0");
-  const xlmBalance = parseFloat(stellarAccount?.balances.find(b => b.asset === "native")?.balance || "0");
+  const xlmBalance = parseFloat(stellarAccount?.balances.find(b => b.asset === "XLM")?.balance || "0");
   
   // Calculate bucket totals from real DB data
   const billsTotal = bills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
