@@ -78,7 +78,7 @@ export async function buildExecutionXdr(decisionId: string, userId: string): Pro
     let destinationAddress: string | null = null;
 
     if (item.bucket === "savings") {
-      destinationAddress = "GBSC2NMA2L33EGNRADXIHGAWH2XPZ2TK3AECFGECH5BDZMLPLQIAVWOP"; // Demo Vault G-address
+      destinationAddress = profile.stellar_public_key; // Send to self for demo to avoid op_no_destination
     } else if (item.bucket === "family") {
       const { data: recipients } = await supabase
         .from("family_recipients")
@@ -87,13 +87,14 @@ export async function buildExecutionXdr(decisionId: string, userId: string): Pro
         .eq("payee_type", "upi")
         .limit(1);
 
+      // We still try to use their entered family address if it's a valid G-address
       if (recipients && recipients.length > 0 && recipients[0].payee_identifier.startsWith("G") && recipients[0].payee_identifier.length === 56) {
         destinationAddress = recipients[0].payee_identifier;
       } else {
-        destinationAddress = "GAGADRPX7EFHUPRIX5H5SEUOVJ6LYGCHVNNHOOIZUOB2X7GVXWCMCR5H"; // Demo Router G-address
+        destinationAddress = profile.stellar_public_key;
       }
     } else if (item.bucket === "bills") {
-      destinationAddress = "GAGADRPX7EFHUPRIX5H5SEUOVJ6LYGCHVNNHOOIZUOB2X7GVXWCMCR5H";
+      destinationAddress = profile.stellar_public_key;
     }
 
     if (!destinationAddress) continue;
