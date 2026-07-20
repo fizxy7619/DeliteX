@@ -91,15 +91,15 @@ export default function AgentDecisionPanel({ decisionId, proposal, onExecuted, o
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
             <span style={{ fontSize: "1.1rem" }}>✦</span>
-            <p style={{ fontWeight: 700, fontSize: "0.9375rem", color: "var(--color-ink-900)" }}>Agent Proposal</p>
+            <p style={{ fontWeight: 700, fontSize: "0.9375rem", color: "#1E293B" }}>Agent Proposal</p>
             <span style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: "100px", backgroundColor: "#FEF3C7", color: "#92400E", fontWeight: 700 }}>PENDING APPROVAL</span>
           </div>
-          <p style={{ fontSize: "0.8125rem", color: "var(--color-ink-500)" }}>
+          <p style={{ fontSize: "0.8125rem", color: "#64748B" }}>
             Incoming: <strong>${proposal.totalUsdc.toFixed(2)} USDC</strong> ≈ <strong>₹{proposal.totalInr.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</strong> at ₹{proposal.fxRate}/USDC
           </p>
         </div>
         {!result && (
-          <button onClick={onDismiss} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-ink-300)", fontSize: "1.2rem", lineHeight: 1, padding: "2px" }}>
+          <button onClick={onDismiss} style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", fontSize: "1.2rem", lineHeight: 1, padding: "2px" }}>
             ×
           </button>
         )}
@@ -115,15 +115,15 @@ export default function AgentDecisionPanel({ decisionId, proposal, onExecuted, o
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <span style={{ fontSize: "1.1rem" }}>{BUCKET_ICONS[item.bucket]}</span>
                 <div>
-                  <p style={{ fontWeight: 600, fontSize: "0.875rem", color: "var(--color-ink-900)" }}>{item.label}</p>
-                  <p style={{ fontSize: "0.75rem", color: "var(--color-ink-500)", marginTop: "1px" }}>{item.description}</p>
+                  <p style={{ fontWeight: 600, fontSize: "0.875rem", color: "#1E293B" }}>{item.label}</p>
+                  <p style={{ fontSize: "0.75rem", color: "#64748B", marginTop: "1px" }}>{item.description}</p>
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
                 <p style={{ fontFamily: "var(--font-display)", fontSize: "1rem", color: c.fg, fontWeight: 600 }}>
                   ₹{item.amountInr.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                 </p>
-                <p style={{ fontSize: "0.75rem", color: "var(--color-ink-400)" }}>${item.amountUsdc} · {item.percent}%</p>
+                <p style={{ fontSize: "0.75rem", color: "#94A3B8" }}>${item.amountUsdc} · {item.percent}%</p>
                 {executedItem && (
                   <p style={{ fontSize: "0.7rem", marginTop: "2px", color: executedItem.status === "executed" ? "var(--color-jade)" : "#C0392B", fontWeight: 600 }}>
                     {executedItem.status === "executed" ? (

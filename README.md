@@ -183,6 +183,10 @@ Open `http://localhost:3000` with your browser to experience the Delite OS.
 ![CI CD Pipeline](apps/web/public/Screenshots/CI%20CD%20Pipeline.png)
 *Automated Turborepo workflows ensuring type-safety, linting, and rapid deployment on every commit.*
 
+### Real-World Transaction Proof
+![Transaction Proof](apps/web/public/Screenshots/Transaction%20Proof.png)
+*Proof of real on-chain automated routing via Freighter wallet.*
+
 ---
 
 ## Deployed Contract Information
