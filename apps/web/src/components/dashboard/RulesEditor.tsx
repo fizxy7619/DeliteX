@@ -1,7 +1,57 @@
 import { useDashboardContext } from "@/hooks/DashboardContext";
+import { useState } from "react";
 
 export default function RulesEditor() {
-  const { rules } = useDashboardContext();
+  const { rules, refreshData } = useDashboardContext();
+  const [isEditing, setIsEditing] = useState(false);
+  const [newRuleName, setNewRuleName] = useState("My Custom Rule");
+  const [allocations, setAllocations] = useState<{ bucket: string; percent: number }[]>([
+    { bucket: "income", percent: 50 },
+    { bucket: "savings", percent: 30 },
+    { bucket: "remittance", percent: 20 },
+  ]);
+  const [saving, setSaving] = useState(false);
+
+  const toggleRule = async (ruleId: string, currentState: boolean) => {
+    // Optimistically update
+    // In a real app, we'd hit an API to toggle this specific rule.
+    // We'll reuse the apply-rule endpoint to recreate the rule as active for now.
+    // Or, we can just call Supabase directly if we have the client here.
+    alert("Toggling rules directly requires a backend update. For now, create a new rule to make it active!");
+  };
+
+  const handleSaveRule = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/ai/apply-rule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newRuleName,
+          allocations,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert("Failed to save rule: " + (err.error || "Unknown error"));
+        return;
+      }
+      await refreshData();
+      setIsEditing(false);
+    } catch (e: any) {
+      alert("Error: " + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addBucket = () => setAllocations([...allocations, { bucket: "income", percent: 0 }]);
+  const updateBucket = (idx: number, key: "bucket" | "percent", val: string | number) => {
+    const newAlloc = [...allocations];
+    newAlloc[idx] = { ...newAlloc[idx], [key]: val };
+    setAllocations(newAlloc);
+  };
+  const removeBucket = (idx: number) => setAllocations(allocations.filter((_, i) => i !== idx));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -10,7 +60,7 @@ export default function RulesEditor() {
           Allocation Rules
         </h2>
         <p style={{ fontSize: "0.875rem", color: "var(--color-ink-500)", marginTop: "6px" }}>
-          Set up automated routing for incoming funds using natural language.
+          Set up automated routing for incoming funds. Active rules are applied immediately via smart contracts.
         </p>
       </div>
 
@@ -40,6 +90,12 @@ export default function RulesEditor() {
             
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
               <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                <input 
+                  type="checkbox" 
+                  checked={r.isActive} 
+                  onChange={() => toggleRule(r.id, r.isActive)}
+                  style={{ display: "none" }} 
+                />
                 <div style={{
                   width: "36px", height: "20px", borderRadius: "10px",
                   backgroundColor: r.isActive ? "var(--color-jade)" : "var(--color-ink-300)",
@@ -53,16 +109,63 @@ export default function RulesEditor() {
                   }} />
                 </div>
               </label>
-              <button className="btn btn-ghost" style={{ padding: "8px" }}>Edit</button>
             </div>
           </div>
         ))}
       </div>
 
       <div style={{ marginTop: "16px" }}>
-        <button className="btn btn-primary">
-          + Create New Rule
-        </button>
+        {!isEditing ? (
+          <button className="btn btn-primary" onClick={() => setIsEditing(true)}>
+            + Create New Rule
+          </button>
+        ) : (
+          <div className="card" style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            <h3 style={{ fontSize: "1.125rem", fontWeight: 600 }}>Create Rule</h3>
+            
+            <div>
+              <label style={{ display: "block", fontSize: "0.875rem", marginBottom: "8px", color: "var(--color-ink-700)" }}>Rule Name</label>
+              <input 
+                type="text" 
+                className="input" 
+                value={newRuleName} 
+                onChange={e => setNewRuleName(e.target.value)} 
+                style={{ width: "100%" }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "0.875rem", marginBottom: "8px", color: "var(--color-ink-700)" }}>Allocations (%)</label>
+              {allocations.map((a, idx) => (
+                <div key={idx} style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+                  <input 
+                    type="text" 
+                    className="input" 
+                    value={a.bucket} 
+                    onChange={e => updateBucket(idx, "bucket", e.target.value)}
+                    style={{ flex: 1 }}
+                  />
+                  <input 
+                    type="number" 
+                    className="input" 
+                    value={a.percent} 
+                    onChange={e => updateBucket(idx, "percent", Number(e.target.value))}
+                    style={{ width: "80px" }}
+                  />
+                  <button className="btn btn-ghost" onClick={() => removeBucket(idx)}>✕</button>
+                </div>
+              ))}
+              <button className="btn btn-ghost" style={{ fontSize: "0.875rem" }} onClick={addBucket}>+ Add Bucket</button>
+            </div>
+
+            <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+              <button className="btn btn-primary" onClick={handleSaveRule} disabled={saving}>
+                {saving ? "Saving..." : "Save Active Rule"}
+              </button>
+              <button className="btn btn-ghost" onClick={() => setIsEditing(false)}>Cancel</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,11 +1,60 @@
 import { useDashboardContext } from "@/hooks/DashboardContext";
+import { useState } from "react";
 
 export default function SavingsView() {
-  const { vault } = useDashboardContext();
+  const { vault, refreshData } = useDashboardContext();
+  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
+  const [depositAmount, setDepositAmount] = useState("");
+  const [isDepositing, setIsDepositing] = useState(false);
 
   const vaultValue = vault ? Number(vault.totalValueUsdc) : 0;
   const yieldEarned = vault ? Number(vault.yieldEarnedUsdc) : 0;
   const apy = vault ? vault.estimatedApyPercent : 5.25;
+
+  const handleDeposit = async () => {
+    if (!depositAmount || Number(depositAmount) <= 0) return;
+    setIsDepositing(true);
+    try {
+      const res = await fetch("/api/vault/deposit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amountUsdc: Number(depositAmount), strategy: "conservative" })
+      });
+      if (!res.ok) throw new Error("Deposit failed");
+      await refreshData();
+      setIsDepositModalOpen(false);
+      setDepositAmount("");
+    } catch (e) {
+      alert("Error: " + (e as Error).message);
+    } finally {
+      setIsDepositing(false);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    // For simplicity, just withdraw 10 USDC
+    if (vaultValue < 10) {
+      alert("Not enough funds to withdraw 10 USDC!");
+      return;
+    }
+    const positionId = vault?.positions?.[0]?.id;
+    if (!positionId) return alert("No active position found.");
+    
+    setIsDepositing(true);
+    try {
+      const res = await fetch("/api/vault/withdraw", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ positionId, amountUsdc: 10 })
+      });
+      if (!res.ok) throw new Error("Withdraw failed");
+      await refreshData();
+    } catch (e) {
+      alert("Error: " + (e as Error).message);
+    } finally {
+      setIsDepositing(false);
+    }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -19,10 +68,34 @@ export default function SavingsView() {
             Your savings are automatically deployed to Stellar testnet DeFi protocols.
           </p>
         </div>
-        <button className="btn btn-ghost" style={{ fontSize: "0.875rem", padding: "8px 16px", border: "1px solid var(--color-border)" }}>
-          Withdraw
-        </button>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <button className="btn btn-ghost" onClick={handleWithdraw} disabled={isDepositing || vaultValue < 10} style={{ fontSize: "0.875rem", padding: "8px 16px", border: "1px solid var(--color-border)" }}>
+            Withdraw $10
+          </button>
+          <button className="btn btn-primary" onClick={() => setIsDepositModalOpen(!isDepositModalOpen)} style={{ fontSize: "0.875rem", padding: "8px 16px" }}>
+            Deposit
+          </button>
+        </div>
       </div>
+
+      {isDepositModalOpen && (
+        <div className="card" style={{ padding: "24px", border: "1px solid var(--color-border)" }}>
+          <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "16px" }}>Deposit USDC</h3>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <input 
+              type="number" 
+              className="input" 
+              placeholder="Amount to deposit" 
+              value={depositAmount}
+              onChange={(e) => setDepositAmount(e.target.value)}
+              style={{ flex: 1 }}
+            />
+            <button className="btn btn-primary" onClick={handleDeposit} disabled={isDepositing || !depositAmount}>
+              {isDepositing ? "Processing..." : "Confirm"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Hero Stats */}
       <div className="card" style={{ padding: "32px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "32px", backgroundColor: "#0F172A", color: "#fff", border: "none" }}>

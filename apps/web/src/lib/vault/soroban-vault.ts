@@ -78,7 +78,7 @@ export interface VaultPosition {
   createdAt: string;
 }
 
-const STUB_CONTRACT_ID = "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCN3";
+const STUB_CONTRACT_ID = process.env.NEXT_PUBLIC_SOROBAN_VAULT || "CC7Z3ALJMFFI3ICBTLJQGZQTA3XPIWCEOSBO3TMQQD52A3FQFM6VLVYS";
 
 /** Simulate deposit to Soroban vault (testnet stub) */
 export async function depositToVault(
