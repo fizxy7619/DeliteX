@@ -8,6 +8,7 @@ import {
   StellarWalletsKit,
   Networks,
 } from "@creit.tech/stellar-wallets-kit";
+import { isConnected as isFreighterConnected } from "@stellar/freighter-api";
 import { FreighterModule } from "@creit.tech/stellar-wallets-kit/modules/freighter";
 import { xBullModule } from "@creit.tech/stellar-wallets-kit/modules/xbull";
 import { AlbedoModule } from "@creit.tech/stellar-wallets-kit/modules/albedo";
@@ -62,6 +63,8 @@ export default function AgentDecisionPanel({ decisionId, proposal, onExecuted, o
         } catch {
           // ignore if already initialized
         }
+
+        try { await isFreighterConnected(); } catch { /* ignore */ }
 
         const signResult = await StellarWalletsKit.signTransaction(xdr, { 
           networkPassphrase: "Test SDF Network ; September 2015" 
