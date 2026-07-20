@@ -195,7 +195,7 @@ Open `http://localhost:3000` with your browser to experience the Delite OS.
 ![Deployed Vault Contract](apps/web/public/Screenshots/Deployed%20Vault%20Contract.png)
 *View of the deployed yield vault smart contract.*
 
-**Transaction Hash:** `[PASTE_TRANSACTION_HASH_HERE]`
+**Transaction Hash:** `951cf5c28b49a187b51667fb9bc026eeea7931ed8a5bf3c48d2b950b2223362c`
 
 ---
 
