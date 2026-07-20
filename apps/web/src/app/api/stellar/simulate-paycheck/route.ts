@@ -41,6 +41,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to fund employer account via Friendbot." }, { status: 500 });
     }
 
+    // Wait for Horizon to index the newly created employer account
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    // 2.5 Ensure destination account exists (if not, Friendbot it too)
+    const destExists = await fundTestnetAccount(profile.stellar_public_key);
+    if (!destExists) {
+      console.warn("User account might not be funded, but proceeding.");
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
     // 3. Send payment from employer to user
     const txHash = await sendPayment({
       senderSecret: employer.secretKey,

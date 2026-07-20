@@ -41,11 +41,12 @@ export default function IncomeView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amountXlm: "1000" })
       });
-      if (!res.ok) throw new Error("Failed to simulate");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to simulate");
       await refreshData();
     } catch (err) {
       console.error(err);
-      alert("Failed to simulate paycheck.");
+      alert("Failed to simulate paycheck: " + (err as Error).message);
     } finally {
       setIsSimulating(false);
     }
