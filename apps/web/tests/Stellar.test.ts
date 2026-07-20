@@ -10,7 +10,7 @@ describe('horizonPaymentToEvent', () => {
       asset_type: 'native',
       transaction_hash: 'abc',
       created_at: '2023-01-01',
-    } as any;
+    } as unknown as Parameters<typeof horizonPaymentToEvent>[0];
 
     const result = horizonPaymentToEvent(record, 'GOWNER');
     expect(result.direction).toBe('incoming');
@@ -29,7 +29,7 @@ describe('horizonPaymentToEvent', () => {
       asset_code: 'USDC',
       transaction_hash: 'def',
       created_at: '2023-01-02',
-    } as any;
+    } as unknown as Parameters<typeof horizonPaymentToEvent>[0];
 
     const result = horizonPaymentToEvent(record, 'GOWNER');
     expect(result.direction).toBe('outgoing');

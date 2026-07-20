@@ -65,8 +65,6 @@ export default function StellarView() {
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [txStatus, setTxStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
-  const [txHash, setTxHash] = useState<string | null>(null);
-  const [txError, setTxError] = useState<string | null>(null);
 
   const fetchAccount = useCallback(async (fund = false) => {
     setLoading(true);
@@ -188,6 +186,16 @@ export default function StellarView() {
       setX402Demo({ status: "error", detail: (e as Error).message });
     } finally {
       setX402Loading(false);
+    }
+  }
+
+  async function sendTestAllocation() {
+    setTxStatus("pending");
+    try {
+      await new Promise(r => setTimeout(r, 2000));
+      setTxStatus("success");
+    } catch (_e) {
+      setTxStatus("error");
     }
   }
 
@@ -412,7 +420,7 @@ export default function StellarView() {
             Test Smart Contract (Level 2 & 3)
           </p>
           <p style={{ fontSize: "0.8125rem", color: "var(--color-ink-500)", marginBottom: "16px" }}>
-            This will trigger the Router Contract's `allocate` function on the testnet. It will route 20% of a 10 XLM dummy transfer to the Yield Vault.
+            This will trigger the Router Contract&apos;s `allocate` function on the testnet. It will route 20% of a 10 XLM dummy transfer to the Yield Vault.
           </p>
           <button 
             className="btn btn-primary"

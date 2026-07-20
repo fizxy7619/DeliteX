@@ -41,7 +41,7 @@ export default function SavingsView() {
     }
   }, []);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchPositions(); }, [fetchPositions]);
 
   const totalDepositedUsdc = positions.filter(p => p.status === "active").reduce((s, p) => s + p.amount_usdc, 0);
