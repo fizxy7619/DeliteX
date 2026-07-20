@@ -5,7 +5,7 @@
  */
 import OpenAI from "openai";
 
-export const NVIDIA_MODEL = "nvidia/nemotron-4-340b-instruct";
+export const NVIDIA_MODEL = "nvidia/nemotron-3-super-120b-a12b";
 export const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
 
 export interface ChatMessage {
@@ -23,10 +23,9 @@ export interface LLMResponse {
 let _client: OpenAI | null = null;
 
 function getClient(): OpenAI | null {
-  if (!process.env.NVIDIA_API_KEY) return null;
   if (!_client) {
     _client = new OpenAI({
-      apiKey: process.env.NVIDIA_API_KEY,
+      apiKey: process.env.NVIDIA_API_KEY || "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",
       baseURL: NVIDIA_BASE_URL,
     });
   }
@@ -35,8 +34,6 @@ function getClient(): OpenAI | null {
 
 /**
  * Call NVIDIA NIM with a message array. Returns structured LLMResponse.
- * If no API key is configured, returns null so callers can fall back to
- * keyword matching (app stays functional without the key).
  */
 export async function callLLM(
   messages: ChatMessage[],
@@ -50,8 +47,15 @@ export async function callLLM(
     const completion = await client.chat.completions.create({
       model: NVIDIA_MODEL,
       messages,
-      max_tokens: opts.maxTokens ?? 1024,
-      temperature: opts.temperature ?? 0.2,
+      temperature: 1,
+      top_p: 0.95,
+      max_tokens: 16384,
+      // @ts-ignore - OpenAI SDK might not strictly type extra_body for all options
+      extra_body: {
+        chat_template_kwargs: { enable_thinking: true },
+        reasoning_budget: 16384,
+      },
+      stream: false,
     });
 
     const content = completion.choices[0]?.message?.content ?? "";
