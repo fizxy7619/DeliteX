@@ -20,7 +20,7 @@ export default function AgentNotification() {
   // When payment events update, check for any pending decisions
   useEffect(() => {
     if (!profile) return;
-    fetch("/api/ai/decisions")
+    fetch("/api/ai/decisions", { cache: "no-store" })
       .then(res => res.json())
       .then(data => {
         const decs = data.decisions ?? [];

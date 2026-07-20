@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
   const { error } = await supabase
     .from("agent_decisions")
-    .update({ status: "failed" })
+    .update({ status: "rejected" })
     .eq("id", body.decisionId)
     .eq("user_id", user.id);
 
