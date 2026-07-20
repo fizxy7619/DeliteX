@@ -8,8 +8,8 @@ import BillsView from "@/components/dashboard/BillsView";
 import FamilyView from "@/components/dashboard/FamilyView";
 import SavingsView from "@/components/dashboard/SavingsView";
 import RulesEditor from "@/components/dashboard/RulesEditor";
-import AiAssistantStub from "@/components/dashboard/AiAssistantStub";
 import StellarView from "@/components/dashboard/StellarView";
+import AgentHistoryView from "@/components/dashboard/AgentHistoryView";
 
 const SECTION_TITLES: Record<Section, string> = {
   overview: "Overview",
@@ -18,7 +18,7 @@ const SECTION_TITLES: Record<Section, string> = {
   family: "Family",
   savings: "Savings",
   rules: "Rules",
-  assistant: "AI Assistant",
+  agent: "AI Agent",
   stellar: "Stellar (Testnet)",
 };
 
@@ -28,6 +28,7 @@ interface DashboardShellProps {
 
 export default function DashboardShell({ userEmail }: DashboardShellProps) {
   const [activeSection, setActiveSection] = useState<Section>("overview");
+  const [pendingDecisions, setPendingDecisions] = useState(0);
 
   function renderSection() {
     switch (activeSection) {
@@ -37,7 +38,7 @@ export default function DashboardShell({ userEmail }: DashboardShellProps) {
       case "family":    return <FamilyView />;
       case "savings":   return <SavingsView />;
       case "rules":     return <RulesEditor />;
-      case "assistant": return <AiAssistantStub />;
+      case "agent":     return <AgentHistoryView />;
       case "stellar":   return <StellarView />;
     }
   }
@@ -48,6 +49,7 @@ export default function DashboardShell({ userEmail }: DashboardShellProps) {
         activeSection={activeSection}
         onNavigate={setActiveSection}
         userEmail={userEmail}
+        pendingDecisions={pendingDecisions}
       />
 
       {/* Main content */}
@@ -55,7 +57,7 @@ export default function DashboardShell({ userEmail }: DashboardShellProps) {
         style={{
           flex: 1,
           minWidth: 0,
-          padding: "40px 40px 100px", // bottom padding for mobile nav
+          padding: "40px 40px 100px",
           maxWidth: "900px",
         }}
       >

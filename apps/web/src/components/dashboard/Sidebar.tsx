@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-type Section = "overview" | "income" | "bills" | "family" | "savings" | "rules" | "assistant" | "stellar";
+type Section = "overview" | "income" | "bills" | "family" | "savings" | "rules" | "agent" | "stellar";
 
 const navItems: { id: Section; label: string; icon: React.ReactNode }[] = [
   {
@@ -39,9 +39,9 @@ const navItems: { id: Section; label: string; icon: React.ReactNode }[] = [
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="11" y2="18"/><circle cx="18" cy="12" r="3"/><circle cx="15" cy="18" r="3"/></svg>,
   },
   {
-    id: "assistant",
-    label: "AI Assistant",
-    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+    id: "agent",
+    label: "AI Agent",
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z"/><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>,
   },
   {
     id: "stellar",
@@ -55,9 +55,10 @@ interface SidebarProps {
   activeSection: Section;
   onNavigate: (section: Section) => void;
   userEmail: string;
+  pendingDecisions?: number;
 }
 
-export default function Sidebar({ activeSection, onNavigate, userEmail }: SidebarProps) {
+export default function Sidebar({ activeSection, onNavigate, userEmail, pendingDecisions = 0 }: SidebarProps) {
   const router = useRouter();
   const supabase = createClient();
   const [signingOut, setSigningOut] = useState(false);
@@ -128,7 +129,10 @@ export default function Sidebar({ activeSection, onNavigate, userEmail }: Sideba
                 }}
               >
                 {item.icon}
-                {item.label}
+                <span style={{ flex: 1 }}>{item.label}</span>
+                {item.id === "agent" && pendingDecisions > 0 && (
+                  <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "var(--color-saffron)", flexShrink: 0 }} />
+                )}
               </button>
             );
           })}
