@@ -21,6 +21,7 @@ import {
 import { FreighterModule } from "@creit.tech/stellar-wallets-kit/modules/freighter";
 import { xBullModule } from "@creit.tech/stellar-wallets-kit/modules/xbull";
 import { AlbedoModule } from "@creit.tech/stellar-wallets-kit/modules/albedo";
+import { Wallet, LogOut, ExternalLink, ChevronDown } from "lucide-react";
 
 const SECTION_TITLES: Record<Section, string> = {
   overview: "Overview",
@@ -36,6 +37,61 @@ const SECTION_TITLES: Record<Section, string> = {
 
 interface DashboardShellProps {
   userEmail: string;
+}
+
+function WalletDropdown({ publicKey, onDisconnect }: { publicKey: string, onDisconnect: () => void }) {
+  const [open, setOpen] = useState(false);
+  
+  const shortKey = `${publicKey.substring(0, 4)}...${publicKey.substring(publicKey.length - 4)}`;
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button 
+        onClick={() => setOpen(!open)}
+        style={{ display: "flex", alignItems: "center", gap: "8px", backgroundColor: "rgba(255,255,255,0.05)", border: "1px solid var(--color-border)", padding: "8px 16px", borderRadius: "100px", cursor: "pointer" }}
+      >
+        <Wallet size={14} color="var(--color-ink-500)" />
+        <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-ink-900)" }}>
+          {shortKey}
+        </span>
+        <ChevronDown size={14} color="var(--color-ink-500)" />
+      </button>
+
+      {open && (
+        <div style={{ 
+          position: "absolute", top: "100%", right: 0, marginTop: "8px", 
+          backgroundColor: "var(--color-bg-card)", border: "1px solid var(--color-border)", 
+          borderRadius: "12px", padding: "8px", width: "200px", boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+          zIndex: 100 
+        }}>
+          <a 
+            href={`https://stellar.expert/explorer/testnet/account/${publicKey}`} 
+            target="_blank" 
+            rel="noreferrer"
+            onClick={() => setOpen(false)}
+            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", textDecoration: "none", color: "var(--color-ink-900)", fontSize: "0.8125rem", borderRadius: "8px" }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = "var(--color-border)"}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+          >
+            <ExternalLink size={14} color="var(--color-ink-500)" />
+            View on Explorer
+          </a>
+          <button 
+            onClick={() => {
+              setOpen(false);
+              onDisconnect();
+            }}
+            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", width: "100%", textAlign: "left", color: "var(--color-saffron)", fontSize: "0.8125rem", borderRadius: "8px", border: "none", background: "none", cursor: "pointer" }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = "rgba(234, 179, 8, 0.1)"}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+          >
+            <LogOut size={14} color="var(--color-saffron)" />
+            Disconnect
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function DashboardContent({ userEmail }: { userEmail: string }) {
@@ -67,6 +123,15 @@ function DashboardContent({ userEmail }: { userEmail: string }) {
       setFunding(false);
     }
   }
+
+  const handleDisconnect = async () => {
+    try {
+      await updateStellarPublicKey("");
+      await refreshStellar();
+    } catch(err) {
+      console.error("Failed to disconnect", err);
+    }
+  };
 
   function renderSection() {
     if (loading) {
@@ -126,7 +191,7 @@ function DashboardContent({ userEmail }: { userEmail: string }) {
             flex: 1,
             minWidth: 0,
             padding: "40px 40px 100px",
-            maxWidth: "900px",
+            maxWidth: "1400px",
           }}
         >
           {/* Page header */}
@@ -140,17 +205,10 @@ function DashboardContent({ userEmail }: { userEmail: string }) {
               </h1>
             </div>
             {stellarAccount && (
-              <a 
-                href={`https://stellar.expert/explorer/testnet/account/${stellarAccount.publicKey}`} 
-                target="_blank" 
-                rel="noreferrer"
-                style={{ display: "flex", alignItems: "center", gap: "8px", backgroundColor: "var(--color-jade-light)", padding: "6px 12px", borderRadius: "100px", textDecoration: "none" }}
-              >
-                <span style={{ width: "8px", height: "8px", backgroundColor: "var(--color-jade)", borderRadius: "50%" }} />
-                <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--color-jade)" }}>
-                  Testnet Connected (Verify)
-                </span>
-              </a>
+              <WalletDropdown 
+                publicKey={stellarAccount.publicKey} 
+                onDisconnect={handleDisconnect} 
+              />
             )}
           </div>
 
