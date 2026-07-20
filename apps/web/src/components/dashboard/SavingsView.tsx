@@ -23,8 +23,7 @@ export default function SavingsView() {
     setIsDepositing(true);
     try {
       if (!process.env.NEXT_PUBLIC_SOROBAN_VAULT) throw new Error("Vault not configured");
-      const publicKey = localStorage.getItem("delite_wallet_pubkey") || vault?.userId; // Assuming profile pubkey is known or we can get it from Freighter
-      
+      // Assuming profile pubkey is known or we can get it from Freighter
       StellarWalletsKit.init({
         network: Networks.TESTNET,
         selectedWalletId: "freighter",
@@ -46,10 +45,12 @@ export default function SavingsView() {
         .addOperation(contract.call("deposit", new Address(address).toScVal(), new Address(address).toScVal(), nativeToScVal(amountStroops, { type: "i128" })))
         .setTimeout(300).build();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tx = await rpcServer.prepareTransaction(tx) as any;
       const signResult = await StellarWalletsKit.signTransaction(tx.toXDR(), { networkPassphrase: STELLAR_NETWORK_PASSPHRASE });
       
       const txToSubmit = TransactionBuilder.fromXDR(signResult.signedTxXdr, STELLAR_NETWORK_PASSPHRASE);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const submitRes = await rpcServer.sendTransaction(txToSubmit as any);
       
       if (submitRes.status === "ERROR") throw new Error("Submission failed");
@@ -105,10 +106,12 @@ export default function SavingsView() {
         .addOperation(contract.call("withdraw", new Address(address).toScVal(), nativeToScVal(amountStroops, { type: "i128" })))
         .setTimeout(300).build();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tx = await rpcServer.prepareTransaction(tx) as any;
       const signResult = await StellarWalletsKit.signTransaction(tx.toXDR(), { networkPassphrase: STELLAR_NETWORK_PASSPHRASE });
       
       const txToSubmit = TransactionBuilder.fromXDR(signResult.signedTxXdr, STELLAR_NETWORK_PASSPHRASE);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const submitRes = await rpcServer.sendTransaction(txToSubmit as any);
       
       if (submitRes.status === "ERROR") throw new Error("Submission failed");
