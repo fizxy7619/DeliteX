@@ -23,3 +23,10 @@ yarn-error.log*
 
 # turborepo
 .turbo
+
+# Rust/Soroban
+target/
+.soroban/
+
+# Unused Scripts
+migrate.js

@@ -1,9 +1,15 @@
 {
   "name": "@delitex/contracts",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "echo 'TODO: Build smart contracts'",
-    "test": "echo 'TODO: Test smart contracts'"
+    "build:vault": "cargo build -p vault --target wasm32-unknown-unknown --release",
+    "build:router": "cargo build -p router --target wasm32-unknown-unknown --release",
+    "build": "pnpm run build:vault && pnpm run build:router",
+    "test": "cargo test"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^16.0.1",
+    "wasm-opt": "^1.4.0"
   }
 }

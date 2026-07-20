@@ -24,7 +24,7 @@ import type { Horizon } from "@stellar/stellar-sdk";
 export type PaymentCallback = (event: Partial<PaymentEvent>) => void;
 
 /** Convert a Horizon payment record to our PaymentEvent shape */
-function horizonPaymentToEvent(
+export function horizonPaymentToEvent(
   record: Horizon.ServerApi.PaymentOperationRecord,
   ownerPublicKey: string
 ): Partial<PaymentEvent> {

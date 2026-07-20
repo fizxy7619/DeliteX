@@ -2,7 +2,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { isConnected, requestAccess } from "@stellar/freighter-api";
+import { isConnected, requestAccess, signTransaction } from "@stellar/freighter-api";
+import { getHorizonServer, TransactionBuilder, Operation, Asset, STELLAR_NETWORK_PASSPHRASE } from "@/lib/stellar/config";
 
 interface StellarBalance {
   asset: string;
@@ -63,6 +64,9 @@ export default function StellarView() {
   const [x402Loading, setX402Loading] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [txStatus, setTxStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [txError, setTxError] = useState<string | null>(null);
 
   const fetchAccount = useCallback(async (fund = false) => {
     setLoading(true);
@@ -131,39 +135,55 @@ export default function StellarView() {
     }
   }
 
-  async function demoX402() {
+  async function disconnectFreighter() {
+    try {
+      await fetch("/api/stellar/account", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ publicKey: "" }),
+      });
+      setAccount(null);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function sendTestTransaction() {
     setX402Loading(true);
     setX402Demo(null);
     try {
-      // Step 1: Call without payment → expect 402
-      const res1 = await fetch("/api/x402/pay-bill", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ billId: "bill_demo_001" }),
-      });
-      if (res1.status !== 402) {
-        setX402Demo({ status: "error", detail: `Expected 402, got ${res1.status}` });
-        return;
-      }
-      const payReq = await res1.json();
+      if (!account?.publicKey) throw new Error("No account connected.");
+      const server = getHorizonServer();
+      const source = await server.loadAccount(account.publicKey);
+      const fee = await server.fetchBaseFee();
 
-      // Step 2: "Pay" by calling again with X-Payment stub header
-      const stubPaymentHeader = Buffer.from(JSON.stringify({ scheme: "exact", payload: "stub_xdr" })).toString("base64");
-      const res2 = await fetch("/api/x402/pay-bill", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Payment": stubPaymentHeader,
-        },
-        body: JSON.stringify({ billId: "bill_demo_001", nonce: payReq.accepts?.[0]?.nonce ?? "" }),
-      });
-      const result = await res2.json();
+      const tx = new TransactionBuilder(source, {
+        fee: fee.toString(),
+        networkPassphrase: STELLAR_NETWORK_PASSPHRASE,
+      })
+        .addOperation(
+          Operation.payment({
+            destination: account.publicKey, // Send to self
+            asset: Asset.native(),
+            amount: "1",
+          })
+        )
+        .setTimeout(30)
+        .build();
+
+      const signResult = await signTransaction(tx.toXDR(), { networkPassphrase: STELLAR_NETWORK_PASSPHRASE });
+      if (signResult.error) {
+        throw new Error(signResult.error.toString());
+      }
+      
+      const txToSubmit = TransactionBuilder.fromXDR(signResult.signedTxXdr, STELLAR_NETWORK_PASSPHRASE);
+      const result = await server.submitTransaction(txToSubmit);
+
       setX402Demo({
-        status: res2.ok ? "success" : "error",
-        detail: res2.ok
-          ? `✓ Bill paid! tx: ${result.txHash ?? result.txHash} (stub)`
-          : result.error,
+        status: "success",
+        detail: `✓ Transaction successful! Hash: ${result.hash}`,
       });
+      fetchAccount(); // refresh balance
     } catch (e) {
       setX402Demo({ status: "error", detail: (e as Error).message });
     } finally {
@@ -280,6 +300,9 @@ export default function StellarView() {
             <button onClick={() => fetchAccount()} className="btn btn-ghost" style={{ fontSize: "0.875rem" }}>
               ↻ Refresh balances
             </button>
+            <button onClick={disconnectFreighter} className="btn btn-ghost" style={{ fontSize: "0.875rem", color: "#C0392B" }}>
+              Disconnect Wallet
+            </button>
           </div>
         </div>
       ) : (
@@ -321,26 +344,24 @@ export default function StellarView() {
         </div>
       )}
 
-      {/* x402 Demo */}
+      {/* Test Transaction */}
       <div className="card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
           <div>
             <p style={{ fontWeight: 600, fontSize: "0.9375rem", color: "var(--color-ink-900)", marginBottom: "4px" }}>
-              x402 Agentic Payment Demo
+              Testnet Transaction
             </p>
             <p style={{ fontSize: "0.8125rem", color: "var(--color-ink-500)", lineHeight: 1.6, maxWidth: "480px" }}>
-              Simulates the AI agent paying a bill via the x402 protocol.
-              Calls <code style={{ backgroundColor: "var(--color-bg)", padding: "1px 6px", borderRadius: "4px" }}>POST /api/x402/pay-bill</code>,
-              handles the 402 response, and retries with a payment header.
+              Move XLM on the testnet. This builds a real Stellar transaction, prompts Freighter to sign it, and submits it to Horizon. You can verify it on the explorer.
             </p>
           </div>
           <button
-            onClick={demoX402}
+            onClick={sendTestTransaction}
             disabled={x402Loading}
             className="btn btn-saffron"
             style={{ flexShrink: 0 }}
           >
-            {x402Loading ? "Running…" : "▶ Run Demo"}
+            {x402Loading ? "Sending…" : "▶ Send 1 XLM (to self)"}
           </button>
         </div>
 
@@ -353,6 +374,7 @@ export default function StellarView() {
             <p style={{
               fontSize: "0.875rem", fontFamily: "monospace",
               color: x402Demo.status === "success" ? "var(--color-jade)" : "#C0392B",
+              wordBreak: "break-all"
             }}>
               {x402Demo.detail}
             </p>
@@ -384,6 +406,22 @@ export default function StellarView() {
               </code>
             </div>
           ))}
+        </div>
+        <div style={{ marginTop: "16px", padding: "16px", backgroundColor: "var(--color-bg)", borderRadius: "8px", border: "1px solid var(--color-border)" }}>
+          <p style={{ fontWeight: 600, fontSize: "0.875rem", color: "var(--color-ink-900)", marginBottom: "8px" }}>
+            Test Smart Contract (Level 2 & 3)
+          </p>
+          <p style={{ fontSize: "0.8125rem", color: "var(--color-ink-500)", marginBottom: "16px" }}>
+            This will trigger the Router Contract's `allocate` function on the testnet. It will route 20% of a 10 XLM dummy transfer to the Yield Vault.
+          </p>
+          <button 
+            className="btn btn-primary"
+            onClick={sendTestAllocation}
+            disabled={txStatus === "pending" || !process.env.NEXT_PUBLIC_SOROBAN_ROUTER}
+            style={{ width: "100%", opacity: (!process.env.NEXT_PUBLIC_SOROBAN_ROUTER || txStatus === "pending") ? 0.5 : 1 }}
+          >
+            {txStatus === "pending" ? "Allocating..." : "Execute Agent Allocation"}
+          </button>
         </div>
       </div>
     </div>

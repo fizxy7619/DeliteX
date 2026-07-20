@@ -121,8 +121,8 @@ export async function PUT(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => ({}));
-  if (!body.publicKey) {
-    return NextResponse.json({ error: "publicKey is required" }, { status: 400 });
+  if (typeof body.publicKey !== "string") {
+    return NextResponse.json({ error: "publicKey must be a string" }, { status: 400 });
   }
 
   const { error } = await supabase

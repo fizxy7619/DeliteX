@@ -20,6 +20,11 @@ jobs:
         with:
           node-version: 22
 
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
@@ -54,6 +59,9 @@ jobs:
           SUPABASE_SERVICE_ROLE: "dummy"
           NVIDIA_API_KEY: "dummy"
 
-      - name: Test
+      - name: Frontend Test
         run: pnpm run test
-        continue-on-error: true # until tests are fully written
+        
+      - name: Contract Test
+        run: cargo test
+        working-directory: packages/contracts
