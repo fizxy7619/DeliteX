@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useDashboardContext } from "@/hooks/DashboardContext";
 import { createClient } from "@/lib/supabase/client";
+import type { FamilyRecipient } from "@/types/domain";
+
+type RawFamily = FamilyRecipient & { monthly_allowance?: number; payee_label?: string };
 
 export default function FamilyView() {
   const { family, profile, refreshData } = useDashboardContext();
@@ -8,8 +11,8 @@ export default function FamilyView() {
   const [isAdding, setIsAdding] = useState(false);
 
   // Handle both camelCase (domain type) and snake_case (raw DB row)
-  const getMonthlyAllowance = (f: any) => f.monthlyAllowance ?? f.monthly_allowance ?? 0;
-  const getPayeeLabel = (f: any) => f.payeeLabel ?? f.payee_label ?? "";
+  const getMonthlyAllowance = (f: RawFamily) => f.monthlyAllowance ?? f.monthly_allowance ?? 0;
+  const getPayeeLabel = (f: RawFamily) => f.payeeLabel ?? f.payee_label ?? "";
 
   const handleAddRecipient = async () => {
     if (!profile) return alert("Please connect or login first.");
@@ -92,7 +95,7 @@ export default function FamilyView() {
             <div style={{ padding: "40px", textAlign: "center", backgroundColor: "var(--color-bg-card)", color: "var(--color-ink-500)", fontSize: "0.875rem", borderRadius: "12px", border: "1px solid var(--color-border)", gridColumn: "1 / -1" }}>
               No family recipients found.
             </div>
-          ) : family.map((f: any) => (
+          ) : family.map((f: RawFamily) => (
             <div key={f.id} className="card" style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                 <div style={{

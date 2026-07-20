@@ -18,18 +18,20 @@ function statusBadge(status: PaymentEvent["status"]) {
   );
 }
 
+type RawPaymentEvent = PaymentEvent & { inr_equivalent?: number; fx_rate?: number; created_at?: string };
+
 export default function IncomeView() {
   const { paymentEvents, profile, refreshData } = useDashboardContext();
   const [isSimulating, setIsSimulating] = useState(false);
 
-  const getAmount = (e: any) => e.amount ?? 0;
-  const getDirection = (e: any) => e.direction ?? "";
-  const getInrEquivalent = (e: any) => e.inrEquivalent ?? e.inr_equivalent ?? 0;
-  const getFxRate = (e: any) => e.fxRate ?? e.fx_rate ?? 0;
-  const getCreatedAt = (e: any) => e.createdAt ?? e.created_at ?? new Date().toISOString();
+  const getAmount = (e: RawPaymentEvent) => e.amount ?? 0;
+  const getDirection = (e: RawPaymentEvent) => e.direction ?? "";
+  const getInrEquivalent = (e: RawPaymentEvent) => e.inrEquivalent ?? e.inr_equivalent ?? 0;
+  const getFxRate = (e: RawPaymentEvent) => e.fxRate ?? e.fx_rate ?? 0;
+  const getCreatedAt = (e: RawPaymentEvent) => e.createdAt ?? e.created_at ?? new Date().toISOString();
 
-  const incoming = paymentEvents.filter((e: any) => getDirection(e) === "incoming");
-  const totalUsdcIn = incoming.filter((e: any) => e.status === "completed").reduce((s: any, e: any) => s + getAmount(e), 0);
+  const incoming = paymentEvents.filter((e: RawPaymentEvent) => getDirection(e) === "incoming");
+  const totalUsdcIn = incoming.filter((e: RawPaymentEvent) => e.status === "completed").reduce((s: number, e: RawPaymentEvent) => s + getAmount(e), 0);
 
   const handleSimulatePaycheck = async () => {
     if (!profile) return alert("Please connect or login first.");
@@ -105,7 +107,7 @@ export default function IncomeView() {
           <div style={{ padding: "40px", textAlign: "center", backgroundColor: "var(--color-bg)", color: "var(--color-ink-500)", fontSize: "0.875rem" }}>
             No incoming payments found. Simulate a paycheck to test!
           </div>
-        ) : incoming.map((evt: any, i: number) => (
+        ) : incoming.map((evt: RawPaymentEvent, i: number) => (
           <div
             key={evt.id}
             style={{

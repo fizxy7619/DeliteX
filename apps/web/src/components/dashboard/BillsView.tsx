@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useDashboardContext } from "@/hooks/DashboardContext";
 import { createClient } from "@/lib/supabase/client";
+import type { Bill } from "@/types/domain";
+
+type RawBill = Bill & { next_due_date?: string; is_autopay_enabled?: boolean };
 
 export default function BillsView() {
   const { bills, profile, refreshData } = useDashboardContext();
@@ -10,10 +13,10 @@ export default function BillsView() {
   const today = new Date("2026-07-16").toISOString().split("T")[0]; // Mocking today for demo logic
 
   // Handle both camelCase (domain type) and snake_case (raw DB row)
-  const getNextDueDate = (b: any) => b.nextDueDate || b.next_due_date || "";
-  const getIsAutopay = (b: any) => b.isAutopayEnabled ?? b.is_autopay_enabled ?? false;
+  const getNextDueDate = (b: RawBill) => b.nextDueDate || b.next_due_date || "";
+  const getIsAutopay = (b: RawBill) => b.isAutopayEnabled ?? b.is_autopay_enabled ?? false;
 
-  const filteredBills = bills.filter((b: any) => {
+  const filteredBills = bills.filter((b: RawBill) => {
     const due = getNextDueDate(b);
     if (filter === "all") return true;
     if (filter === "upcoming") return due >= today;
@@ -21,8 +24,8 @@ export default function BillsView() {
   });
 
   const totalUpcoming = bills
-    .filter((b: any) => getNextDueDate(b) >= today)
-    .reduce((sum: any, b: any) => sum + (Number(b.amount) || 0), 0);
+    .filter((b: RawBill) => getNextDueDate(b) >= today)
+    .reduce((sum: number, b: RawBill) => sum + (Number(b.amount) || 0), 0);
 
   const handleAddBill = async () => {
     if (!profile) return alert("Please connect or login first.");
