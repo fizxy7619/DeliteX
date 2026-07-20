@@ -186,7 +186,7 @@ export async function sendPayment({
     );
   }
 
-  if (memo) {
+  if (memo && !isContract) {
     txBuilder.addMemo(Memo.text(memo));
   }
 
