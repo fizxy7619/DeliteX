@@ -29,6 +29,7 @@ export default function AdminPage() {
   useEffect(() => {
     const stored = localStorage.getItem("MASTER_WALLET_SECRET");
     if (stored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMasterSecret(stored);
       // We can't derive public key synchronously without stellar-sdk easily here unless we import Keypair
       // But we can just use stellar-sdk if we add the import. For simplicity, we just fetch balances
@@ -40,7 +41,7 @@ export default function AdminPage() {
           getAccountBalances(kp.publicKey()).then(acc => {
             if (acc) setBalances(acc.balances);
           });
-        } catch (e) {
+        } catch {
           console.error("Invalid secret in localStorage");
         }
       });
@@ -69,8 +70,8 @@ export default function AdminPage() {
       await new Promise(r => setTimeout(r, 2000));
       const acc = await getAccountBalances(kp.publicKey);
       if (acc) setBalances(acc.balances);
-    } catch (err: any) {
-      alert("Failed to initialize Master Wallet: " + err.message);
+    } catch (err) {
+      alert("Failed to initialize Master Wallet: " + (err as Error).message);
     } finally {
       setFunding(false);
     }
@@ -116,9 +117,9 @@ export default function AdminPage() {
       const acc = await getAccountBalances(masterPublic);
       if (acc) setBalances(acc.balances);
 
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      alert("Payment failed: " + err.message);
+      alert("Payment failed: " + (err as Error).message);
     } finally {
       setSendingId(null);
     }

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { PaymentEvent } from "@/types/domain";
 import { useDashboardContext } from "@/hooks/DashboardContext";
 
@@ -20,7 +19,7 @@ function statusBadge(status: PaymentEvent["status"]) {
 type RawPaymentEvent = PaymentEvent & { inr_equivalent?: number; fx_rate?: number; created_at?: string };
 
 export default function IncomeView() {
-  const { paymentEvents, profile, refreshData } = useDashboardContext();
+  const { paymentEvents } = useDashboardContext();
 
   const getAmount = (e: RawPaymentEvent) => e.amount ?? 0;
   const getDirection = (e: RawPaymentEvent) => e.direction ?? "";
