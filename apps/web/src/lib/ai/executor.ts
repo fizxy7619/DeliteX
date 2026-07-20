@@ -63,19 +63,16 @@ export async function buildExecutionXdr(decisionId: string, userId: string): Pro
   const server = getHorizonServer();
   const sourceAccount = await server.loadAccount(profile.stellar_public_key);
 
-  const txBuilder = new TransactionBuilder(sourceAccount, {
-    fee: BASE_FEE,
-    networkPassphrase: STELLAR_NETWORK_PASSPHRASE,
-  });
-
   const proposal = decision.proposal_json as AgentProposal;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let sorobanOp: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const paymentOps: any[] = [];
 
   for (const item of proposal.items) {
     if (item.bucket === "income") continue;
 
     const xlmAmount = (item.amountUsdc * 8.33).toFixed(7);
-
-    let destinationAddress: string | null = null;
     
     // For Soroban Smart Contract Route
     if (item.bucket === "savings") {
@@ -83,65 +80,89 @@ export async function buildExecutionXdr(decisionId: string, userId: string): Pro
       const totalAmountStroops = BigInt(Math.floor(proposal.totalUsdc * 8.33 * 10000000));
       const savingsPercent = Math.floor((item.amountUsdc / proposal.totalUsdc) * 100);
 
-      txBuilder.addOperation(
-        routerContract.call(
-          "allocate",
-          new Address(profile.stellar_public_key).toScVal(),
-          nativeToScVal(totalAmountStroops, { type: "i128" }),
-          nativeToScVal(savingsPercent, { type: "u32" })
-        )
+      sorobanOp = routerContract.call(
+        "allocate",
+        new Address(profile.stellar_public_key).toScVal(),
+        nativeToScVal(totalAmountStroops, { type: "i128" }),
+        nativeToScVal(savingsPercent, { type: "u32" })
       );
-      continue;
-    } else if (item.bucket === "family") {
-      const { data: recipients } = await supabase
-        .from("family_recipients")
-        .select("payee_identifier, name")
-        .eq("user_id", userId)
-        .eq("payee_type", "upi")
-        .limit(1);
+    } else {
+      let destinationAddress: string | null = null;
+      if (item.bucket === "family") {
+        const { data: recipients } = await supabase
+          .from("family_recipients")
+          .select("payee_identifier, name")
+          .eq("user_id", userId)
+          .eq("payee_type", "upi")
+          .limit(1);
 
-      // We still try to use their entered family address if it's a valid G-address
-      if (recipients && recipients.length > 0 && recipients[0].payee_identifier.startsWith("G") && recipients[0].payee_identifier.length === 56) {
-        destinationAddress = recipients[0].payee_identifier;
-      } else {
+        // We still try to use their entered family address if it's a valid G-address
+        if (recipients && recipients.length > 0 && recipients[0].payee_identifier.startsWith("G") && recipients[0].payee_identifier.length === 56) {
+          destinationAddress = recipients[0].payee_identifier;
+        } else {
+          destinationAddress = profile.stellar_public_key;
+        }
+      } else if (item.bucket === "bills") {
         destinationAddress = profile.stellar_public_key;
       }
-    } else if (item.bucket === "bills") {
-      destinationAddress = profile.stellar_public_key;
+
+      if (destinationAddress) {
+        paymentOps.push(
+          Operation.payment({
+            destination: destinationAddress,
+            asset: Asset.native(),
+            amount: xlmAmount,
+          })
+        );
+      }
     }
-
-    if (!destinationAddress) continue;
-
-    txBuilder.addOperation(
-      Operation.payment({
-        destination: destinationAddress,
-        asset: Asset.native(),
-        amount: xlmAmount,
-      })
-    );
   }
 
-  // Ensure there's at least one operation to prevent build errors
-  if (txBuilder.operations.length === 0) {
-     txBuilder.addOperation(
+  // If there's a Soroban operation, simulate IT ALONE to get the footprint
+  if (sorobanOp) {
+    const simTx = new TransactionBuilder(sourceAccount, { fee: BASE_FEE, networkPassphrase: STELLAR_NETWORK_PASSPHRASE })
+      .addOperation(sorobanOp)
+      .setTimeout(300)
+      .build();
+
+    const rpcServer = new rpc.Server(SOROBAN_RPC_URL);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const preparedSimTx = (await rpcServer.prepareTransaction(simTx)) as any;
+
+    const finalBuilder = new TransactionBuilder(sourceAccount, { 
+      fee: preparedSimTx.fee, 
+      networkPassphrase: STELLAR_NETWORK_PASSPHRASE 
+    });
+    
+    finalBuilder.addOperation(sorobanOp);
+    for (const op of paymentOps) {
+      finalBuilder.addOperation(op);
+    }
+    
+    finalBuilder.setSorobanData(preparedSimTx.sorobanData);
+    return finalBuilder.setTimeout(300).build().toXDR();
+  } else {
+    const txBuilder = new TransactionBuilder(sourceAccount, {
+      fee: BASE_FEE,
+      networkPassphrase: STELLAR_NETWORK_PASSPHRASE,
+    });
+    
+    for (const op of paymentOps) {
+      txBuilder.addOperation(op);
+    }
+
+    if (txBuilder.operations.length === 0) {
+      txBuilder.addOperation(
         Operation.payment({
           destination: profile.stellar_public_key,
           asset: Asset.native(),
           amount: "0.0000001",
         })
-     );
+      );
+    }
+    
+    return txBuilder.setTimeout(300).build().toXDR();
   }
-
-  let transaction = txBuilder.setTimeout(300).build();
-
-  // If there's a Soroban operation, simulate and attach footprint
-  if (proposal.items.some(i => i.bucket === "savings")) {
-    const rpcServer = new rpc.Server(SOROBAN_RPC_URL);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transaction = (await rpcServer.prepareTransaction(transaction)) as any;
-  }
-
-  return transaction.toXDR();
 }
 
 /**
