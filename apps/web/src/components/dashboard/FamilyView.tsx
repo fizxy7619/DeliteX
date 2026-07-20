@@ -90,7 +90,7 @@ export default function FamilyView() {
         throw new Error("Recipient does not have a valid Stellar address.");
       }
 
-      let tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: STELLAR_NETWORK_PASSPHRASE })
+      const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: STELLAR_NETWORK_PASSPHRASE })
         .addOperation(Operation.payment({
           destination: destination,
           asset: Asset.native(),
