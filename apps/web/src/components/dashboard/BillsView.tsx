@@ -180,10 +180,10 @@ export default function BillsView() {
             <h3 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#1E293B" }}>Add New Bill</h3>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <input type="text" placeholder="Bill Name (e.g. Rent, Electricity)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0" }} value={newName} onChange={e => setNewName(e.target.value)} />
-              <input type="text" placeholder="Payee (Stellar Address or UPI)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0" }} value={newPayee} onChange={e => setNewPayee(e.target.value)} />
-              <input type="number" placeholder="Amount (INR)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0" }} value={newAmount} onChange={e => setNewAmount(e.target.value)} />
-              <select className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", backgroundColor: "#fff" }} value={newFrequency} onChange={e => setNewFrequency(e.target.value as "monthly" | "weekly" | "yearly")}>
+              <input type="text" placeholder="Bill Name (e.g. Rent, Electricity)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", color: "#000", backgroundColor: "#fff" }} value={newName} onChange={e => setNewName(e.target.value)} />
+              <input type="text" placeholder="Payee (Stellar Address or UPI)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", color: "#000", backgroundColor: "#fff" }} value={newPayee} onChange={e => setNewPayee(e.target.value)} />
+              <input type="number" placeholder="Amount (INR)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", color: "#000", backgroundColor: "#fff" }} value={newAmount} onChange={e => setNewAmount(e.target.value)} />
+              <select className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", backgroundColor: "#fff", color: "#000" }} value={newFrequency} onChange={e => setNewFrequency(e.target.value as "monthly" | "weekly" | "yearly")}>
                 <option value="monthly">Monthly</option>
                 <option value="weekly">Weekly</option>
                 <option value="yearly">Yearly</option>
@@ -191,8 +191,8 @@ export default function BillsView() {
             </div>
 
             <div style={{ display: "flex", gap: "12px", marginTop: "8px", justifyContent: "flex-end" }}>
-              <button className="btn btn-ghost" style={{ padding: "8px 16px" }} onClick={() => setShowAddModal(false)}>Cancel</button>
-              <button className="btn btn-primary" style={{ padding: "8px 16px" }} onClick={handleAddBill} disabled={isAdding}>{isAdding ? "Adding..." : "Add"}</button>
+              <button className="btn btn-ghost" style={{ padding: "8px 16px", color: "#000" }} onClick={() => setShowAddModal(false)}>Cancel</button>
+              <button className="btn btn-primary" style={{ padding: "8px 16px", color: "#fff" }} onClick={handleAddBill} disabled={isAdding}>{isAdding ? "Adding..." : "Add"}</button>
             </div>
           </div>
         </div>

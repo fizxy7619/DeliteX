@@ -14,10 +14,12 @@ export interface ParsedIntent {
     | "ask_question"
     | "set_allowance"
     | "simulate_payment"
+    | "send_payment"
     | "other";
   allocations?: { bucket: BucketType; percent: number }[];
   billId?: string;
   recipientId?: string;
+  recipientName?: string;
   amount?: number;
   /** Human-readable explanation the AI will show back to the user */
   explanation: string;
@@ -47,9 +49,10 @@ IMPORTANT RULES:
 
 You MUST respond with ONLY valid JSON, no markdown, no extra text:
 {
-  "intent": "set_allocation" | "pause_bill" | "resume_bill" | "ask_question" | "set_allowance" | "simulate_payment" | "other",
+  "intent": "set_allocation" | "pause_bill" | "resume_bill" | "ask_question" | "set_allowance" | "simulate_payment" | "send_payment" | "other",
   "allocations": [{ "bucket": "income"|"bills"|"family"|"savings", "percent": number }],
   "amount": number | null,
+  "recipientName": string | null,
   "explanation": "string - what you will do, in plain English",
   "confidence": number (0.0 to 1.0)
 }`;
@@ -79,7 +82,19 @@ function keywordFallback(text: string): ParsedIntent {
     return { intent: "ask_question", explanation: "Our FX spread is under 0.3% via Stellar DEX, vs 3–7% for traditional wires. On ₹10 lakh annual income, you save ₹27,000–67,000/year.", confidence: 0.95, source: "fallback", latencyMs: Date.now() - start };
   }
 
-  return { intent: "other", explanation: "I'm not sure what you meant. Try: 'Allocate 20% to savings', 'Always pay bills first', or 'Send 10% to family'.", confidence: 0.3, source: "fallback", latencyMs: Date.now() - start };
+  // Very naive fallback for send payment
+  if (lower.includes("send") || lower.includes("pay")) {
+    const amtMatch = lower.match(/\b(\d+)\b/);
+    const amount = amtMatch ? parseInt(amtMatch[1], 10) : 100;
+    
+    let recipientName = "recipient";
+    if (lower.includes("mom")) recipientName = "Mom";
+    else if (lower.includes("dad")) recipientName = "Dad";
+    
+    return { intent: "send_payment", amount, recipientName, explanation: `I will prepare a transfer of ₹${amount} to ${recipientName}.`, confidence: 0.8, source: "fallback", latencyMs: Date.now() - start };
+  }
+
+  return { intent: "other", explanation: "I'm not sure what you meant. Try: 'Allocate 20% to savings', 'Pay 500 to Mom', or 'Send 10% to family'.", confidence: 0.3, source: "fallback", latencyMs: Date.now() - start };
 }
 
 /** Parse user text into a structured intent using NVIDIA Nemotron */
@@ -105,6 +120,7 @@ export async function parseIntent(userText: string): Promise<ParsedIntent> {
       allocations: parsed.allocations ?? undefined,
       billId: parsed.billId ?? undefined,
       recipientId: parsed.recipientId ?? undefined,
+      recipientName: parsed.recipientName ?? undefined,
       amount: parsed.amount ?? undefined,
       explanation: parsed.explanation ?? "Done.",
       confidence: parsed.confidence ?? 0.7,

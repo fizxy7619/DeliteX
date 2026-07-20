@@ -239,15 +239,15 @@ export default function FamilyView() {
             <h3 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#1E293B" }}>Add Family Recipient</h3>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <input type="text" placeholder="Name" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0" }} value={newName} onChange={e => setNewName(e.target.value)} />
-              <input type="text" placeholder="Relationship (e.g. Mother)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0" }} value={newRelationship} onChange={e => setNewRelationship(e.target.value)} />
-              <input type="text" placeholder="Stellar G-Address" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0" }} value={newAddress} onChange={e => setNewAddress(e.target.value)} />
-              <input type="number" placeholder="Monthly Allowance (INR)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0" }} value={newAmount} onChange={e => setNewAmount(e.target.value)} />
+              <input type="text" placeholder="Name" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", color: "#000", backgroundColor: "#fff" }} value={newName} onChange={e => setNewName(e.target.value)} />
+              <input type="text" placeholder="Relationship (e.g. Mother)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", color: "#000", backgroundColor: "#fff" }} value={newRelationship} onChange={e => setNewRelationship(e.target.value)} />
+              <input type="text" placeholder="Stellar G-Address" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", color: "#000", backgroundColor: "#fff" }} value={newAddress} onChange={e => setNewAddress(e.target.value)} />
+              <input type="number" placeholder="Monthly Allowance (INR)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", color: "#000", backgroundColor: "#fff" }} value={newAmount} onChange={e => setNewAmount(e.target.value)} />
             </div>
 
             <div style={{ display: "flex", gap: "12px", marginTop: "8px", justifyContent: "flex-end" }}>
-              <button className="btn btn-ghost" style={{ padding: "8px 16px" }} onClick={() => setShowAddModal(false)}>Cancel</button>
-              <button className="btn btn-primary" style={{ padding: "8px 16px" }} onClick={handleAddRecipient} disabled={isAdding}>{isAdding ? "Adding..." : "Add"}</button>
+              <button className="btn btn-ghost" style={{ padding: "8px 16px", color: "#000" }} onClick={() => setShowAddModal(false)}>Cancel</button>
+              <button className="btn btn-primary" style={{ padding: "8px 16px", color: "#fff" }} onClick={handleAddRecipient} disabled={isAdding}>{isAdding ? "Adding..." : "Add"}</button>
             </div>
           </div>
         </div>

@@ -3,9 +3,24 @@
 import { useState, useRef, useEffect, useMemo, type FormEvent } from "react";
 import type { AllocationRule, AiMessage } from "@/types/domain";
 import type { ParsedIntent } from "@/lib/ai/intent-parser";
+import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit";
+import { FreighterModule } from "@creit.tech/stellar-wallets-kit/modules/freighter";
+import { isConnected as isFreighterConnected } from "@stellar/freighter-api";
+import { TransactionBuilder, Networks, Operation, Asset, rpc, Account } from "@stellar/stellar-sdk";
+import { createClient } from "@/lib/supabase/client";
+
+const STELLAR_NETWORK_PASSPHRASE = Networks.TESTNET;
+const SOROBAN_RPC_URL = "https://soroban-testnet.stellar.org";
+const BASE_FEE = "100";
 
 type DbAiMessage = AiMessage & {
-  parsed_rule?: { allocations: { bucket: string; percent: number }[] };
+  parsed_rule?: { 
+    allocations?: { bucket: string; percent: number }[];
+    intent?: string;
+    amount?: number;
+    recipientId?: string;
+    recipientName?: string;
+  };
   llm_model?: string;
   llm_latency_ms?: number;
 };
@@ -45,6 +60,84 @@ function IntentCard({ intent, onApply, onDismiss, isAlreadyApplied }: { intent: 
     }
   }
 
+  async function handleSendPayment() {
+    if (intent.intent !== "send_payment" || !intent.amount) return;
+    if (!intent.recipientId) {
+      setApplyError("No recipient ID matched. Cannot send.");
+      return;
+    }
+    
+    setApplying(true);
+    setApplyError(null);
+    try {
+      const supabase = createClient();
+      
+      // Get the payeeIdentifier
+      const { data: rec } = await supabase.from("family_recipients").select("payee_identifier, total_transferred_inr").eq("id", intent.recipientId).single();
+      if (!rec || !rec.payee_identifier) throw new Error("Recipient does not have a configured wallet address.");
+
+      StellarWalletsKit.init({
+        network: Networks.TESTNET,
+        selectedWalletId: "freighter",
+        modules: [new FreighterModule()],
+      });
+      await isFreighterConnected();
+      
+      const rpcServer = new rpc.Server(SOROBAN_RPC_URL);
+      const { address } = await StellarWalletsKit.authModal();
+      
+      // We don't have Horizon in imports easily, we can use RPC to load account for sequence number
+      const accountRes = await rpcServer.getAccount(address);
+      if (!accountRes) throw new Error("Could not fetch account details.");
+      
+      // Create a mock Account object using sequence number
+      const account = new Account(address, accountRes.sequenceNumber().toString());
+      
+      const xlmAmount = (intent.amount / 8.33).toFixed(7);
+
+      const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: STELLAR_NETWORK_PASSPHRASE })
+        .addOperation(Operation.payment({
+          destination: rec.payee_identifier,
+          asset: Asset.native(),
+          amount: xlmAmount
+        }))
+        .setTimeout(300).build();
+
+      const signResult = await StellarWalletsKit.signTransaction(tx.toXDR(), { networkPassphrase: STELLAR_NETWORK_PASSPHRASE });
+      const signedTx = TransactionBuilder.fromXDR(signResult.signedTxXdr, STELLAR_NETWORK_PASSPHRASE);
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const submitRes = await rpcServer.sendTransaction(signedTx as any);
+      if (submitRes.status === "ERROR") throw new Error("Transaction failed to submit.");
+      
+      let isSuccess = false;
+      for (let i = 0; i < 10; i++) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        const status = await rpcServer.getTransaction(submitRes.hash);
+        if (status.status === "SUCCESS") {
+           isSuccess = true;
+           break;
+        } else if (status.status === "FAILED") {
+           throw new Error("Transaction failed on-chain.");
+        }
+      }
+      
+      if (!isSuccess) throw new Error("Transaction timed out.");
+
+      await supabase.from("family_recipients").update({
+        last_transfer_amount: intent.amount,
+        last_transfer_at: new Date().toISOString(),
+        total_transferred_inr: (rec.total_transferred_inr || 0) + intent.amount
+      }).eq("id", intent.recipientId);
+
+      onApply();
+    } catch (err) {
+      setApplyError((err as Error).message);
+    } finally {
+      setApplying(false);
+    }
+  }
+
   const bucketColors: Record<string, string> = {
     bills: "#E8872A", family: "#2B7A5A", savings: "#4F46E5", income: "#64748B",
   };
@@ -52,8 +145,13 @@ function IntentCard({ intent, onApply, onDismiss, isAlreadyApplied }: { intent: 
   return (
     <div style={{ marginTop: "8px", padding: "14px 16px", borderRadius: "12px", border: "1px solid rgba(43,122,90,0.3)", backgroundColor: "var(--color-jade-light)" }}>
       <p style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--color-jade)", marginBottom: "8px" }}>
-        Proposed Rule
+        {intent.intent === "send_payment" ? "Proposed Payment" : "Proposed Rule"}
       </p>
+      {intent.intent === "send_payment" && (
+        <p style={{ fontSize: "0.875rem", color: "var(--color-ink-900)", marginBottom: "12px", fontWeight: 500 }}>
+          ₹{intent.amount?.toLocaleString("en-IN")} to {intent.recipientName ?? "Recipient"}
+        </p>
+      )}
       {intent.allocations && (
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
           {intent.allocations.map((a) => (
@@ -68,15 +166,21 @@ function IntentCard({ intent, onApply, onDismiss, isAlreadyApplied }: { intent: 
       )}
       {!applied ? (
         <div style={{ display: "flex", gap: "8px" }}>
-          <button onClick={handleApply} disabled={applying} style={{ padding: "6px 14px", borderRadius: "6px", border: "none", backgroundColor: "var(--color-jade)", color: "#fff", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-body)" }}>
-            {applying ? "Applying…" : "✓ Apply Rule"}
-          </button>
+          {intent.intent === "send_payment" ? (
+             <button onClick={handleSendPayment} disabled={applying} style={{ padding: "6px 14px", borderRadius: "6px", border: "none", backgroundColor: "var(--color-jade)", color: "#fff", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-body)" }}>
+               {applying ? "Executing…" : "Sign & Send"}
+             </button>
+          ) : (
+             <button onClick={handleApply} disabled={applying} style={{ padding: "6px 14px", borderRadius: "6px", border: "none", backgroundColor: "var(--color-jade)", color: "#fff", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-body)" }}>
+               {applying ? "Applying…" : "✓ Apply Rule"}
+             </button>
+          )}
           <button onClick={onDismiss} style={{ padding: "6px 14px", borderRadius: "6px", border: "1px solid rgba(43,122,90,0.4)", backgroundColor: "transparent", color: "var(--color-jade)", fontSize: "0.8125rem", cursor: "pointer", fontFamily: "var(--font-body)" }}>
             Dismiss
           </button>
         </div>
       ) : (
-        <p style={{ fontSize: "0.8125rem", color: "var(--color-jade)", fontWeight: 600 }}>✓ Rule applied to your allocation!</p>
+        <p style={{ fontSize: "0.8125rem", color: "var(--color-jade)", fontWeight: 600 }}>✓ {intent.intent === "send_payment" ? "Payment successful!" : "Rule applied to your allocation!"}</p>
       )}
     </div>
   );
@@ -96,7 +200,8 @@ function MessageBubble({ msg, activeRule, isLatestIntent, pendingIntent, isDismi
   const dbMsg = msg as DbAiMessage;
   
   const isAlreadyApplied = useMemo(() => {
-    if (!activeRule || !dbMsg.parsed_rule) return false;
+    if (!activeRule || !dbMsg.parsed_rule || dbMsg.parsed_rule.intent === "send_payment") return false;
+    if (!dbMsg.parsed_rule.allocations) return false;
     const sortedActive = [...activeRule.allocations].sort((a,b) => a.bucket.localeCompare(b.bucket));
     const sortedParsed = [...dbMsg.parsed_rule.allocations].sort((a,b) => a.bucket.localeCompare(b.bucket));
     return JSON.stringify(sortedActive) === JSON.stringify(sortedParsed);
@@ -115,10 +220,20 @@ function MessageBubble({ msg, activeRule, isLatestIntent, pendingIntent, isDismi
         </div>
       </div>
 
-      {!isUser && !isDismissed && isLatestIntent && (pendingIntent?.intent === "set_allocation" || dbMsg.parsed_rule) && onApply && onDismiss && (
+      {!isUser && !isDismissed && isLatestIntent && (pendingIntent?.intent === "set_allocation" || pendingIntent?.intent === "send_payment" || dbMsg.parsed_rule) && onApply && onDismiss && (
         <div style={{ paddingLeft: "36px", width: "100%" }}>
           <IntentCard
-            intent={(pendingIntent ?? { intent: "set_allocation", allocations: dbMsg.parsed_rule?.allocations || [], explanation: msg.content, source: "nvidia-nim", latencyMs: 0, confidence: 1 }) as ParsedIntent}
+            intent={(pendingIntent ?? { 
+              intent: dbMsg.parsed_rule?.intent || "set_allocation", 
+              allocations: dbMsg.parsed_rule?.allocations || [],
+              amount: dbMsg.parsed_rule?.amount,
+              recipientId: dbMsg.parsed_rule?.recipientId,
+              recipientName: dbMsg.parsed_rule?.recipientName,
+              explanation: msg.content, 
+              source: "nvidia-nim", 
+              latencyMs: 0, 
+              confidence: 1 
+            }) as ParsedIntent}
             onApply={onApply}
             onDismiss={onDismiss}
             isAlreadyApplied={isAlreadyApplied}

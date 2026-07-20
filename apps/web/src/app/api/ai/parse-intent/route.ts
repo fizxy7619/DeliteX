@@ -36,12 +36,30 @@ export async function POST(request: NextRequest) {
   // 2. Parse Intent
   const intent = await parseIntent(body.message);
 
+  // 2b. Lookup recipient if send_payment
+  if (intent.intent === "send_payment" && intent.recipientName) {
+    const { data: recipients } = await serviceSupabase
+      .from("family_recipients")
+      .select("*")
+      .eq("user_id", user.id)
+      .ilike("name", `%${intent.recipientName}%`)
+      .limit(1);
+    
+    if (recipients && recipients.length > 0) {
+      intent.recipientId = recipients[0].id;
+      // You could also add a payeeIdentifier field to intent, but let's assume client fetches it or we pass it
+    } else {
+      intent.explanation += ` (Warning: Couldn't find a recipient matching "${intent.recipientName}")`;
+    }
+  }
+
   // 3. Insert Assistant Message
   await serviceSupabase.from("ai_chat_messages").insert({
     user_id: user.id,
     role: "assistant",
     content: intent.explanation,
-    parsed_rule: intent.intent === "set_allocation" ? { allocations: intent.allocations } : null,
+    parsed_rule: intent.intent === "set_allocation" ? { allocations: intent.allocations } : 
+                 intent.intent === "send_payment" ? { intent: "send_payment", amount: intent.amount, recipientId: intent.recipientId, recipientName: intent.recipientName } : null,
     llm_model: intent.source === "nvidia-nim" ? "NVIDIA Nemotron-4-340B" : "Keyword fallback",
     llm_latency_ms: intent.latencyMs,
     created_at: new Date().toISOString()
