@@ -85,20 +85,24 @@ function MessageBubble({ msg, pendingIntent, onApply, onDismiss }: {
             ✦
           </div>
         )}
-        <div style={{ maxWidth: "75%", padding: "11px 15px", borderRadius: isUser ? "16px 16px 4px 16px" : "16px 16px 16px 4px", backgroundColor: isUser ? "var(--color-ink-900)" : "var(--color-bg-card)", color: isUser ? "#fff" : "var(--color-ink-700)", fontSize: "0.875rem", lineHeight: 1.65, border: isUser ? "none" : "1px solid var(--color-border)", boxShadow: isUser ? "none" : "0 1px 3px rgba(0,0,0,0.04)" }}>
+        <div style={{ maxWidth: "75%", padding: "11px 15px", borderRadius: isUser ? "16px 16px 4px 16px" : "16px 16px 16px 4px", backgroundColor: isUser ? "var(--color-jade)" : "var(--color-bg-card)", color: isUser ? "#fff" : "var(--color-ink-700)", fontSize: "0.875rem", lineHeight: 1.65, border: isUser ? "none" : "1px solid var(--color-border)", boxShadow: isUser ? "none" : "0 1px 3px rgba(0,0,0,0.04)" }}>
           {msg.content}
         </div>
       </div>
 
-      {!isUser && pendingIntent && pendingIntent.intent === "set_allocation" && onApply && onDismiss && (
+      {!isUser && (pendingIntent?.intent === "set_allocation" || (msg as any).parsed_rule) && onApply && onDismiss && (
         <div style={{ paddingLeft: "36px", width: "100%" }}>
-          <IntentCard intent={pendingIntent} onApply={onApply} onDismiss={onDismiss} />
+          <IntentCard 
+            intent={pendingIntent ?? { intent: "set_allocation", allocations: (msg as any).parsed_rule.allocations, explanation: msg.content, source: "nvidia-nim", latencyMs: 0, confidence: 1 }} 
+            onApply={onApply} 
+            onDismiss={onDismiss} 
+          />
         </div>
       )}
 
-      {!isUser && msg.llmModel && (
+      {!isUser && (msg.llmModel || (msg as any).llm_model) && (
         <p style={{ fontSize: "0.6875rem", color: "var(--color-ink-300)", paddingLeft: "36px", marginTop: "4px" }}>
-          {msg.llmModel} · {msg.llmLatencyMs}ms
+          {msg.llmModel || (msg as any).llm_model} · {msg.llmLatencyMs || (msg as any).llm_latency_ms}ms
         </p>
       )}
     </div>
@@ -118,10 +122,18 @@ const SUGGESTIONS = [
 import { useDashboardContext } from "@/hooks/DashboardContext";
 
 export default function AiAssistant({ onPendingDecision }: { onPendingDecision?: (id: string) => void }) {
-  const { aiMessages } = useDashboardContext();
-  const [messages, setMessages] = useState<AiMessage[]>(aiMessages.length ? aiMessages : [
-    { id: "welcome", role: "assistant", content: "Hi! I'm your AI agent. I can help you automate payments or simulate testnet transactions. How can I help today?", createdAt: new Date().toISOString(), parsedRule: null, llmModel: null, llmLatencyMs: null }
-  ]);
+  const { aiMessages, refreshData } = useDashboardContext();
+  const [messages, setMessages] = useState<AiMessage[]>([]);
+  
+  useEffect(() => {
+    if (aiMessages && aiMessages.length > 0) {
+      setMessages(aiMessages);
+    } else {
+      setMessages([
+        { id: "welcome", role: "assistant", content: "Hi! I'm your AI agent. I can help you automate payments or simulate testnet transactions. How can I help today?", createdAt: new Date().toISOString(), parsedRule: null, llmModel: null, llmLatencyMs: null }
+      ]);
+    }
+  }, [aiMessages]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   // Store latest parsed intent per message (keyed by message id)
@@ -176,6 +188,9 @@ export default function AiAssistant({ onPendingDecision }: { onPendingDecision?:
       if (intent.intent === "set_allocation") {
         setIntentMap((prev) => ({ ...prev, [assistantMsgId]: intent }));
       }
+      
+      // Refresh to fetch the real DB records
+      await refreshData();
     } catch {
       const errMsg: AiMessage = {
         id: `msg_err_${Date.now()}`,
@@ -191,31 +206,20 @@ export default function AiAssistant({ onPendingDecision }: { onPendingDecision?:
   }
 
   async function handleSimulate() {
-    const agentMsg: AiMessage = {
-      id: `msg_sim_${Date.now()}`,
-      role: "assistant",
-      content: "Generating allocation proposal for a simulated $500 USDC incoming payment…",
-      parsedRule: null, llmModel: "Agent Engine", llmLatencyMs: null,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, agentMsg]);
-
-    const res = await fetch("/api/ai/propose", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amountUsdc: 500, fxRate: 84.5 }),
-    });
-    const data = await res.json();
-    if (res.ok && onPendingDecision) {
-      onPendingDecision(data.decisionId);
-      const confirmMsg: AiMessage = {
-        id: `msg_sim2_${Date.now()}`,
-        role: "assistant",
-        content: `✦ Proposal ready! I've analyzed your rules and prepared an allocation plan for $500 USDC (≈₹${(500 * 84.5).toLocaleString("en-IN")}). Check the **Agent** tab to review and approve.`,
-        parsedRule: null, llmModel: "Agent Engine", llmLatencyMs: null,
-        createdAt: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, confirmMsg]);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/ai/propose", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amountUsdc: 500, fxRate: 84.5 }),
+      });
+      const data = await res.json();
+      if (res.ok && onPendingDecision) {
+        onPendingDecision(data.decisionId);
+      }
+      await refreshData();
+    } finally {
+      setLoading(false);
     }
   }
 

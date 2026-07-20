@@ -14,12 +14,19 @@ export default function RulesEditor() {
   ]);
   const [saving, setSaving] = useState(false);
 
-  const toggleRule = async () => {
-    // Optimistically update
-    // In a real app, we'd hit an API to toggle this specific rule.
-    // We'll reuse the apply-rule endpoint to recreate the rule as active for now.
-    // Or, we can just call Supabase directly if we have the client here.
-    alert("Toggling rules directly requires a backend update. For now, create a new rule to make it active!");
+  const toggleRule = async (ruleId: string, currentStatus: boolean) => {
+    const { createClient } = await import("@/lib/supabase/client");
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("allocation_rules")
+      .update({ is_active: !currentStatus })
+      .eq("id", ruleId);
+      
+    if (error) {
+      alert("Failed to toggle rule: " + error.message);
+    } else {
+      await refreshData();
+    }
   };
 
   const handleSaveRule = async () => {
@@ -95,7 +102,7 @@ export default function RulesEditor() {
                 <input 
                   type="checkbox" 
                   checked={r.isActive} 
-                  onChange={() => toggleRule()}
+                  onChange={() => toggleRule(r.id, r.isActive)}
                   style={{ display: "none" }} 
                 />
                 <div style={{

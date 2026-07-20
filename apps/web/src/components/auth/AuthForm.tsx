@@ -64,7 +64,7 @@ export default function AuthForm() {
           <input
             id="full-name"
             type="text"
-            className="input"
+            style={inputStyle}
             placeholder="Rahul Sharma"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
@@ -78,7 +78,7 @@ export default function AuthForm() {
         <input
           id="email"
           type="email"
-          className="input"
+          style={inputStyle}
           placeholder="rahul@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -92,7 +92,7 @@ export default function AuthForm() {
         <input
           id="password"
           type="password"
-          className="input"
+          style={inputStyle}
           placeholder={mode === "signup" ? "Min. 8 characters" : "••••••••"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -111,9 +111,25 @@ export default function AuthForm() {
 
       <button
         type="submit"
-        className="btn btn-primary"
         disabled={loading}
-        style={{ marginTop: "4px", width: "100%", justifyContent: "center" }}
+        style={{ 
+          marginTop: "12px", 
+          width: "100%", 
+          justifyContent: "center",
+          backgroundColor: "var(--color-jade)",
+          color: "#fff",
+          border: "none",
+          padding: "14px 20px",
+          borderRadius: "12px",
+          fontSize: "0.9375rem",
+          fontWeight: 600,
+          cursor: loading ? "not-allowed" : "pointer",
+          opacity: loading ? 0.7 : 1,
+          transition: "transform 0.15s, opacity 0.15s",
+          boxShadow: "0 4px 12px rgba(43,122,90,0.3)"
+        }}
+        onMouseOver={(e) => { if(!loading) e.currentTarget.style.transform = "translateY(-1px)" }}
+        onMouseOut={(e) => { if(!loading) e.currentTarget.style.transform = "none" }}
       >
         {loading ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
       </button>
@@ -134,8 +150,22 @@ export default function AuthForm() {
 
 const labelStyle: React.CSSProperties = {
   display: "block",
-  fontSize: "0.8125rem",
+  fontSize: "0.75rem",
   fontWeight: 600,
-  color: "var(--color-ink-700)",
-  marginBottom: "6px",
+  color: "rgba(255, 255, 255, 0.7)",
+  marginBottom: "8px",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+};
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "14px 16px",
+  backgroundColor: "rgba(0, 0, 0, 0.2)",
+  border: "1px solid rgba(255, 255, 255, 0.1)",
+  borderRadius: "12px",
+  color: "#fff",
+  fontSize: "1rem",
+  outline: "none",
+  transition: "border-color 0.2s, background-color 0.2s",
 };

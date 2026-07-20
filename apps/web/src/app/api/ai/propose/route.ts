@@ -25,5 +25,28 @@ export async function POST(request: NextRequest) {
   const proposal = await generateProposal(user.id, amountUsdc, fxRate);
   const decisionId = await saveDecision(user.id, proposal);
 
+  // Insert System message
+  const serviceSupabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
+  
+  await serviceSupabase.from("ai_chat_messages").insert([
+    {
+      user_id: user.id,
+      role: "user",
+      content: `Simulate incoming payment of $${amountUsdc}`,
+      created_at: new Date().toISOString()
+    },
+    {
+      user_id: user.id,
+      role: "assistant",
+      content: `✦ Proposal ready! I've analyzed your rules and prepared an allocation plan for $${amountUsdc} USDC (≈₹${(amountUsdc * fxRate).toLocaleString("en-IN")}). Check the **Agent** tab to review and approve.`,
+      llm_model: "Agent Engine",
+      created_at: new Date(Date.now() + 1000).toISOString()
+    }
+  ]);
+
   return NextResponse.json({ decisionId, proposal });
 }
