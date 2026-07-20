@@ -10,8 +10,14 @@ export async function POST(request: NextRequest) {
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (!user || authErr) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const serviceSupabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
 
   const body = await request.json().catch(() => ({}));
   const { allocations, name, aiPrompt } = body;
@@ -38,14 +44,14 @@ export async function POST(request: NextRequest) {
   }
 
   // Deactivate existing active rules
-  await supabase
+  await serviceSupabase
     .from("allocation_rules")
     .update({ is_active: false })
     .eq("user_id", user.id)
     .eq("is_active", true);
 
   // Insert new rule
-  const { data, error } = await supabase
+  const { data, error } = await serviceSupabase
     .from("allocation_rules")
     .insert({
       user_id: user.id,

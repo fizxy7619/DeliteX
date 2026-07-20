@@ -15,17 +15,20 @@ export default function RulesEditor() {
   const [saving, setSaving] = useState(false);
 
   const toggleRule = async (ruleId: string, currentStatus: boolean) => {
-    const { createClient } = await import("@/lib/supabase/client");
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("allocation_rules")
-      .update({ is_active: !currentStatus })
-      .eq("id", ruleId);
-      
-    if (error) {
-      alert("Failed to toggle rule: " + error.message);
-    } else {
-      await refreshData();
+    try {
+      const res = await fetch("/api/ai/toggle-rule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ruleId, isActive: !currentStatus }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert("Failed to toggle rule: " + (err.error || "Unknown error"));
+      } else {
+        await refreshData();
+      }
+    } catch (e) {
+      alert("Error: " + (e as Error).message);
     }
   };
 
