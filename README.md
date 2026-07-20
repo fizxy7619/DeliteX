@@ -25,10 +25,18 @@ Delite is a **Soroban-powered Agentic Payment OS** deployed on **Stellar Testnet
 ## The Problem & Our Solution
 
 ### The Problem
-Global workers, freelancers, and NRIs face high fees, slow settlement times, and manual overhead when managing cross-border income. Traditional remittance involves intermediaries, hidden FX spreads, and manual routing of funds for bills, savings, and family support.
+In the era of remote work and globalized employment, freelancers, developers, and Non-Resident Indians (NRIs) face significant friction when managing cross-border income. The traditional system is broken:
+- **Exorbitant Intermediary Fees:** Banks and traditional remittance platforms (like Swift or Western Union) slice away huge chunks of income through hidden FX spreads and high flat fees.
+- **Slow Settlement Times:** International transfers can take 3 to 5 business days to clear, leaving workers waiting for their hard-earned money.
+- **Manual Overhead:** Once funds arrive, users must manually allocate them—paying specific bills, transferring a portion to family members, and locking the rest away into savings or investments. This multi-step process is tedious and prone to human error.
 
-### The Solution
-Delite is a unified **Agentic Remittance & Payments OS** built on the Stellar network. It provides instant, near-zero fee cross-border settlements with an AI-powered smart router. Users declare their financial goals in plain English (e.g., *"Save 30%, send 20% to family"*), and the AI configures an on-chain Soroban smart contract to autonomously route incoming funds to decentralized yield vaults, family wallets, and bill-pay endpoints.
+### The Solution: Delite OS
+Delite is a unified **Agentic Remittance & Payments Operating System** built on the Stellar network. We replace banks and manual routing with instantaneous, trustless smart contracts driven by Artificial Intelligence. 
+
+By utilizing Stellar's near-zero fee, high-throughput network, and Soroban's rust-based smart contracts, Delite offers:
+- **Instant Cross-Border Settlement:** Receive USDC or XLM directly to your wallet in ~5 seconds.
+- **AI-Powered Natural Language Rules:** Instead of complex financial dashboards, users declare their goals in plain English: *"Allocate 50% to rent, send 20% to my mom, and put 30% into savings."*
+- **Autonomous On-Chain Routing:** The AI agent analyzes the intent and configures a Soroban Smart Contract Router. When a paycheck arrives, the contract intercepts it, atomically splits the funds according to the AI's parsed rule, and instantly routes the correct percentages directly into the family wallets and decentralized yield vaults. 
 
 ---
 
@@ -46,13 +54,20 @@ Delite is a unified **Agentic Remittance & Payments OS** built on the Stellar ne
 
 ---
 
-## Architecture
+## Architecture Flow
+
+The Delite architecture merges off-chain AI reasoning with on-chain deterministic execution. Here is the step-by-step lifecycle of a Delite allocation rule:
+
+1. **User Intent (Off-Chain):** The user types a command into the Next.js Dashboard.
+2. **AI Processing (Off-Chain):** The text is sent to the `Delite AI Agent` (powered by NVIDIA Nemotron-4-340B). The AI parses the intent, categorizes the buckets (e.g., bills, savings, remittance), and strictly outputs a JSON allocation matrix.
+3. **Smart Contract Configuration (On-Chain):** The Next.js frontend crafts a Stellar XDR transaction embedding these allocations and prompts the user's Freighter wallet to sign it.
+4. **Execution (On-Chain):** When an employer sends a paycheck to the user, the **Soroban Smart Contract Router** intercepts the incoming funds. It reads the user's active allocation matrix, atomically splits the funds, and dispatches them to their final destinations (Soroban DeFi Vaults and Family Wallets).
 
 ```text
  ┌────────────────┐                                ┌──────────────────────────────────────────┐
  │ User Wallet    │ ── (Natural Language) ──▶ │ Delite AI Agent (Nemotron-4-340B)      │
  └────────────────┘                                └──────────────────────────────────────────┘
-         │                                                            │ (Generates Allocations)
+         │                                                            │ (Generates strict JSON Allocations)
          ▼                                                            ▼
  ┌────────────────┐      sign tx (XDR)             ┌──────────────────────────────────────────┐
  │ Stellar Wallet │ ◀───────────────────────────── │ Next.js Dashboard (Frontend OS)        │
@@ -64,7 +79,7 @@ Delite is a unified **Agentic Remittance & Payments OS** built on the Stellar ne
                                                    │ Soroban Smart Contract Router            │
                                                    │ (Trustless, On-chain Execution)          │
                                                    └──────────┬──────────────────────┬────────┘
-                                                              │                      │
+                                                              │ (Atomic splits)      │
                                                               ▼                      ▼
                                             ┌──────────────────────┐      ┌──────────────────────┐
                                             │ Family / Remittance  │      │ Soroban DeFi Vault   │
@@ -74,32 +89,36 @@ Delite is a unified **Agentic Remittance & Payments OS** built on the Stellar ne
 
 ---
 
-## Project Structure
+## Comprehensive Project Structure
+
+Delite utilizes a Turborepo monorepo to safely share configurations and UI components between the web frontend and the smart contract interfaces.
 
 ```text
 DeliteX/
 ├── apps/
 │   └── web/                       # Next.js 14 App Router (Frontend & API)
-│       ├── public/Screenshots/    # Application screenshots & assets
-│       ├── src/app/               # App Router pages (Dashboard, Login) & API routes
-│       ├── src/components/        # React components (AiAssistant, RulesEditor, Vault)
-│       ├── src/hooks/             # Global state (DashboardContext, useDashboardData)
-│       └── src/lib/ai/            # AI intent parsing & NVIDIA NIM integrations
+│       ├── public/Screenshots/    # Application screenshots & static assets
+│       ├── src/app/               # App Router pages (Dashboard, Admin, Login) & API routes
+│       │   └── api/ai/            # AI endpoints mapping Nemotron-4 to UI components
+│       ├── src/components/        # React components (AiAssistant, RulesEditor, Admin Panel)
+│       ├── src/hooks/             # Global Contexts mapping Supabase state to camelCase domain models
+│       ├── src/types/             # Shared TypeScript domain models defining the Core OS logic
+│       └── src/lib/               # Integrations: Supabase Client, Stellar SDK logic, AI parsing
 │
 ├── packages/
-│   ├── contracts/                 # Rust Soroban smart contracts
-│   │   ├── router/                # On-chain payment splitting and allocation logic
-│   │   ├── vault/                 # ERC-4626 style yield-generation vault
+│   ├── contracts/                 # Rust-based Soroban smart contracts
+│   │   ├── router/                # On-chain payment splitting, parsing allocation rules natively
+│   │   ├── vault/                 # ERC-4626 style yield-generation vault interacting with Soroban Tokens
 │   │   └── scripts/               # Testnet deployment automation (`deploy.js`)
 │   │
-│   ├── ui/                        # Shared UI components and design system
-│   ├── config-eslint/             # Monorepo ESLint configurations
-│   └── config-typescript/         # Monorepo TypeScript configurations
+│   ├── ui/                        # Shared UI components and layout foundations
+│   ├── config-eslint/             # Strict Monorepo ESLint configurations preventing impure hooks
+│   └── config-typescript/         # Monorepo TypeScript base configurations
 │
-├── supabase/                      # Database migrations & schema definitions
-├── .github/workflows/             # CI/CD pipelines (Lint, Build, Deploy)
-├── package.json                   # Turborepo root configuration
-└── pnpm-workspace.yaml            # PNPM workspace definition
+├── supabase/                      # Database migrations & relational schema definitions (Row-Level Security)
+├── .github/workflows/             # CI/CD pipelines (Lint, Build, Test, Deploy)
+├── package.json                   # Turborepo root configuration & scripts
+└── pnpm-workspace.yaml            # PNPM workspace package mapper
 ```
 
 ---
