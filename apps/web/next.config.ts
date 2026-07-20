@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {};
-
+const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_SOROBAN_VAULT: "CAE3KJ5UNOJCEKNNXJ2H6DNKWQZCOUAQAN2UXUXZVRKMXOVAFXDYGJSW",
+    NEXT_PUBLIC_SOROBAN_ROUTER: "CCGWWHSKSBRVNZ4FNBNUFOG25BGDMAE6LIUZEKIHWGSHH6KMKVPRECXE",
+  }
+};
 export default nextConfig;
