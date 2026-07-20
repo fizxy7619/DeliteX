@@ -65,8 +65,8 @@ export async function POST(request: Request) {
       const success = await fundTestnetAccount(kp.publicKey);
       if (!success) throw new Error("Friendbot funding failed");
     } else if (action === "restore" && secretKey) {
-      kp = Keypair.fromSecret(secretKey);
-      kp = { secretKey: kp.secret(), publicKey: kp.publicKey() };
+      const parsedKp = Keypair.fromSecret(secretKey);
+      kp = { secretKey: parsedKp.secret(), publicKey: parsedKp.publicKey() };
     } else {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }

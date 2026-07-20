@@ -15,6 +15,18 @@ interface UserProfile {
   stellar_public_key: string;
 }
 
+interface PaymentHistoryItem {
+  id: string;
+  created_at: string;
+  amount: string;
+  currency: string;
+  tx_hash: string;
+  user_profiles?: {
+    full_name: string;
+    email: string;
+  };
+}
+
 export default function AdminPage() {
   const [masterSecret, setMasterSecret] = useState("");
   const [masterPublic, setMasterPublic] = useState("");
@@ -26,7 +38,7 @@ export default function AdminPage() {
   const [customSecret, setCustomSecret] = useState("");
   const [lastTx, setLastTx] = useState<{ hash: string; user: string } | null>(null);
 
-  const [history, setHistory] = useState<Record<string, unknown>[]>([]);
+  const [history, setHistory] = useState<PaymentHistoryItem[]>([]);
 
   useEffect(() => {
     // Fetch master wallet from API

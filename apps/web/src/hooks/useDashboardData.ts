@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type {
@@ -70,7 +71,7 @@ export function useDashboardData() {
         updatedAt: pData?.updated_at
       } as UserProfile);
 
-      setPaymentEvents((peData || []).map((pe: Record<string, unknown>) => ({
+      setPaymentEvents((peData || []).map((pe: any) => ({
         ...pe,
         userId: pe.user_id,
         inrEquivalent: pe.inr_equivalent,
@@ -83,7 +84,7 @@ export function useDashboardData() {
         createdAt: pe.created_at
       })));
 
-      setBills((bData || []).map((b: Record<string, unknown>) => ({
+      setBills((bData || []).map((b: any) => ({
         ...b,
         userId: b.user_id,
         payeeType: b.payee_type,
@@ -96,7 +97,7 @@ export function useDashboardData() {
         createdAt: b.created_at
       })));
 
-      setFamily((fData || []).map((f: Record<string, unknown>) => ({
+      setFamily((fData || []).map((f: any) => ({
         ...f,
         userId: f.user_id,
         avatarInitials: f.avatar_initials,
@@ -126,7 +127,7 @@ export function useDashboardData() {
         updatedAt: vData.updated_at
       } : null);
 
-      setRules((rData || []).map((r: Record<string, unknown>) => ({
+      setRules((rData || []).map((r: any) => ({
         ...r,
         userId: r.user_id,
         incomeSourceFilter: r.income_source_filter,
@@ -137,7 +138,7 @@ export function useDashboardData() {
         updatedAt: r.updated_at
       })));
 
-      setAiMessages((mData || []).map((m: Record<string, unknown>) => ({
+      setAiMessages((mData || []).map((m: any) => ({
         ...m,
         parsedRule: m.parsed_rule,
         llmModel: m.llm_model,
