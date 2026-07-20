@@ -55,19 +55,43 @@ export interface X402VerifyResult {
 
 // ─── Server-side helpers ──────────────────────────────────────
 
-const AGENT_WALLET_PUBLIC_KEY =
-  process.env.AGENT_WALLET_PUBLIC_KEY ?? "GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGBM4KGTMQ3YPVZEGQISGCB";
+/**
+ * Get the master agent wallet public key from the DB,
+ * fallback to environment variable, then fallback to a default.
+ */
+async function getAgentWalletPublicKey(): Promise<string> {
+  const envKey = process.env.AGENT_WALLET_PUBLIC_KEY;
+  if (envKey) return envKey;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createServerClient } = require("@supabase/ssr");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const cookieStore = await require("next/headers").cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+    );
+    const { data } = await supabase.from("admin_wallets").select("public_key").limit(1).single();
+    if (data?.public_key) return data.public_key;
+  } catch (err) {
+    console.warn("[x402] Could not fetch agent wallet from DB, using fallback", err);
+  }
+  return "GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGBM4KGTMQ3YPVZEGQISGCB";
+}
 
 /**
  * Build the 402 response body telling the agent what to pay.
  */
-export function buildPaymentRequired(params: {
+export async function buildPaymentRequired(params: {
   usdcAmount: string;
   memo: string;
   nonce: string;
   isTestnet: boolean;
-}): X402PaymentRequired {
+}): Promise<X402PaymentRequired> {
   const TESTNET_USDC_ISSUER = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+  const payTo = await getAgentWalletPublicKey();
 
   return {
     x402Version: X402_VERSION,
@@ -79,7 +103,7 @@ export function buildPaymentRequired(params: {
         asset: "USDC",
         issuer: TESTNET_USDC_ISSUER,
         maxAmountRequired: params.usdcAmount,
-        payTo: AGENT_WALLET_PUBLIC_KEY,
+        payTo,
         maxTimeoutSeconds: 300,
         nonce: params.nonce,
         memo: params.memo,

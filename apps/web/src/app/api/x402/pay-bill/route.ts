@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   if (!paymentHeader) {
     // No payment → respond 402 with payment requirements
     const nonce = randomUUID();
-    const paymentRequired = buildPaymentRequired({
+    const paymentRequired = await buildPaymentRequired({
       usdcAmount: ENDPOINT_COST_USDC,
       memo: `bill:${billId}`,
       nonce,

@@ -26,15 +26,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "allocations array is required" }, { status: 400 });
   }
 
-  let total = allocations.reduce((s: number, a: { percent: number }) => s + (a.percent ?? 0), 0);
+  const validBuckets = ["income", "savings", "family", "bills"];
+  allocations.forEach((a: { bucket: string; percent: number }) => {
+    if (!validBuckets.includes(a.bucket)) {
+      a.bucket = "income";
+    }
+  });
+
+  // Combine duplicates (e.g. if we mapped 'remittance' to 'income' and 'income' already exists)
+  const combined: Record<string, number> = {};
+  allocations.forEach((a: { bucket: string; percent: number }) => {
+    combined[a.bucket] = (combined[a.bucket] || 0) + (a.percent ?? 0);
+  });
+  const normalizedAllocations = Object.entries(combined).map(([bucket, percent]) => ({ bucket, percent }));
+
+  let total = normalizedAllocations.reduce((s: number, a: { percent: number }) => s + (a.percent ?? 0), 0);
   
   // Auto-fill remainder to 'income' bucket
   if (total < 100) {
-    const existingIncome = allocations.find((a: { bucket: string; percent: number }) => a.bucket === "income");
+    const existingIncome = normalizedAllocations.find((a: { bucket: string; percent: number }) => a.bucket === "income");
     if (existingIncome) {
       existingIncome.percent += (100 - total);
     } else {
-      allocations.push({ bucket: "income", percent: 100 - total });
+      normalizedAllocations.push({ bucket: "income", percent: 100 - total });
     }
     total = 100;
   }
@@ -56,7 +70,7 @@ export async function POST(request: NextRequest) {
     .insert({
       user_id: user.id,
       name: name ?? "AI Generated Rule",
-      allocations,
+      allocations: normalizedAllocations,
       is_active: true,
       ai_generated: !!aiPrompt,
       ai_prompt: aiPrompt ?? null,
