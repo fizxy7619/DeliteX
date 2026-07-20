@@ -3,8 +3,8 @@
 > _Next-generation financial OS for freelancers and NRIs. Soroban-powered, AI-routed, fully production-ready._
 
 [![Network](https://img.shields.io/badge/Network-Stellar%20Testnet-blue)](https://stellar.org)
-[![Vault Contract](https://img.shields.io/badge/Soroban-Vault%20Contract-purple)](https://stellar.expert/explorer/testnet/contract/CBHHUKU65XWOJYXEXBJHU7PJOZEWG2AOGKZ56ASPU3OG7FXEZCQMT45O)
-[![Router Contract](https://img.shields.io/badge/Soroban-Router%20Contract-purple)](https://stellar.expert/explorer/testnet/contract/CCEQR6MONDFSUYHSIJU5QMKWVJKT3WMGBV32NHWAR766TIUYBN2B6CEK)
+[![Vault Contract](https://img.shields.io/badge/Soroban-Vault%20Contract-purple)](https://stellar.expert/explorer/testnet/contract/CC7Z3ALJMFFI3ICBTLJQGZQTA3XPIWCEOSBO3TMQQD52A3FQFM6VLVYS)
+[![Router Contract](https://img.shields.io/badge/Soroban-Router%20Contract-purple)](https://stellar.expert/explorer/testnet/contract/CAKXHCLWKWLETL532QDVC7XHCMUSMMFJCA34IT5SJT2LDTKUMOH6WBRW)
 
 Delite is a **Soroban-powered Agentic Payment OS** deployed on **Stellar Testnet**, architected to automate global income flows using intelligent agents. Connect a Stellar wallet, fund via Friendbot, receive payments, and let the on-chain agent automatically route your funds to daily expenses, family remittances, and yield-generating vaults.
 
@@ -15,8 +15,8 @@ Delite is a **Soroban-powered Agentic Payment OS** deployed on **Stellar Testnet
 | Resource             | Value                                                      |
 | -------------------- | ---------------------------------------------------------- |
 | **Live Demo**        | *(Add your live deployment link here)*                     |
-| **Vault Contract**   | `CBHHUKU65XWOJYXEXBJHU7PJOZEWG2AOGKZ56ASPU3OG7FXEZCQMT45O` |
-| **Router Contract**  | `CCEQR6MONDFSUYHSIJU5QMKWVJKT3WMGBV32NHWAR766TIUYBN2B6CEK` |
+| **Vault Contract**   | `CC7Z3ALJMFFI3ICBTLJQGZQTA3XPIWCEOSBO3TMQQD52A3FQFM6VLVYS` |
+| **Router Contract**  | `CAKXHCLWKWLETL532QDVC7XHCMUSMMFJCA34IT5SJT2LDTKUMOH6WBRW` |
 | **Network**          | Stellar Testnet                                            |
 | **Soroban RPC**      | `https://soroban-testnet.stellar.org`                      |
 
@@ -146,8 +146,8 @@ A crop of the transaction hash details as shown after a smart contract execution
 ## Deployed Contract Information
 
 - **Live Demo Link:** *(Your live deployment URL)*
-- **Vault Contract Address:** `CBHHUKU65XWOJYXEXBJHU7PJOZEWG2AOGKZ56ASPU3OG7FXEZCQMT45O`
-- **Router Contract Address:** `CCEQR6MONDFSUYHSIJU5QMKWVJKT3WMGBV32NHWAR766TIUYBN2B6CEK`
+- **Vault Contract Address:** `CC7Z3ALJMFFI3ICBTLJQGZQTA3XPIWCEOSBO3TMQQD52A3FQFM6VLVYS`
+- **Router Contract Address:** `CAKXHCLWKWLETL532QDVC7XHCMUSMMFJCA34IT5SJT2LDTKUMOH6WBRW`
 - **Network:** Stellar Testnet
 - **Soroban RPC URL:** `https://soroban-testnet.stellar.org`
 

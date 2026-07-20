@@ -394,48 +394,7 @@ export default function StellarView() {
         )}
       </div>
 
-      {/* Contracts */}
-      <div className="card">
-        <p style={{ fontWeight: 600, fontSize: "0.9375rem", color: "var(--color-ink-900)", marginBottom: "16px" }}>
-          Soroban contracts (Phase 3)
-        </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {[
-            { name: "Router Contract", id: process.env.NEXT_PUBLIC_SOROBAN_ROUTER ?? "CAKXHCLWKWLETL532QDVC7XHCMUSMMFJCA34IT5SJT2LDTKUMOH6WBRW", desc: "Splits incoming payments per AllocationRule" },
-            { name: "Vault Contract", id: process.env.NEXT_PUBLIC_SOROBAN_VAULT ?? "CC7Z3ALJMFFI3ICBTLJQGZQTA3XPIWCEOSBO3TMQQD52A3FQFM6VLVYS", desc: "ERC-4626 USDC yield vault" },
-          ].map((c) => (
-            <div key={c.name} style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "12px 16px", backgroundColor: "var(--color-bg)", borderRadius: "8px",
-              border: "1px solid var(--color-border)", flexWrap: "wrap", gap: "8px"
-            }}>
-              <div>
-                <p style={{ fontWeight: 600, fontSize: "0.875rem", color: "var(--color-ink-900)" }}>{c.name}</p>
-                <p style={{ fontSize: "0.75rem", color: "var(--color-ink-500)", marginTop: "2px" }}>{c.desc}</p>
-              </div>
-              <code style={{ fontSize: "0.75rem", color: "var(--color-ink-300)", fontFamily: "monospace" }}>
-                {c.id}
-              </code>
-            </div>
-          ))}
-        </div>
-        <div style={{ marginTop: "16px", padding: "16px", backgroundColor: "var(--color-bg)", borderRadius: "8px", border: "1px solid var(--color-border)" }}>
-          <p style={{ fontWeight: 600, fontSize: "0.875rem", color: "var(--color-ink-900)", marginBottom: "8px" }}>
-            Test Smart Contract (Level 2 & 3)
-          </p>
-          <p style={{ fontSize: "0.8125rem", color: "var(--color-ink-500)", marginBottom: "16px" }}>
-            This will trigger the Router Contract&apos;s `allocate` function on the testnet. It will route 20% of a 10 XLM dummy transfer to the Yield Vault.
-          </p>
-          <button 
-            className="btn btn-primary"
-            onClick={sendTestAllocation}
-            disabled={txStatus === "pending"}
-            style={{ width: "100%", opacity: txStatus === "pending" ? 0.5 : 1 }}
-          >
-            {txStatus === "pending" ? "Allocating..." : "Execute Agent Allocation"}
-          </button>
-        </div>
-      </div>
+
     </div>
   );
 }
