@@ -5,7 +5,7 @@ const NETWORK_PASSPHRASE = IS_TESTNET ? Networks.TESTNET : Networks.PUBLIC;
 const SOROBAN_RPC = IS_TESTNET ? "https://soroban-testnet.stellar.org" : "https://soroban.stellar.org";
 const server = new rpc.Server(SOROBAN_RPC);
 
-const VAULT_ID = "CAE3KJ5UNOJCEKNNXJ2H6DNKWQZCOUAQAN2UXUXZVRKMXOVAFXDYGJSW";
+const VAULT_ID = "CAQFOWQLHE3BBOAGMJZNPCIASUOSJJCUQLJE6V6VSMW7H7ST4OOHD77C";
 
 async function initVault() {
     console.log("Generating keypair for invoker...");
