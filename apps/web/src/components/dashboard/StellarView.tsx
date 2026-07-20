@@ -28,24 +28,28 @@ interface FxQuote {
 }
 
 function BalanceBadge({ balance }: { balance: StellarBalance }) {
-  const assetColors: Record<string, { bg: string; fg: string }> = {
-    XLM: { bg: "#EEF2FF", fg: "#4F46E5" },
-    USDC: { bg: "var(--color-jade-light)", fg: "var(--color-jade)" },
-    EURC: { bg: "var(--color-saffron-light)", fg: "var(--color-saffron)" },
+  const assetName = balance.asset === "native" ? "XLM" : balance.asset;
+  
+  const assetColors: Record<string, { bg: string; fg: string; border: string }> = {
+    XLM: { bg: "rgba(255, 255, 255, 0.05)", fg: "#ffffff", border: "rgba(255, 255, 255, 0.15)" },
+    USDC: { bg: "rgba(43, 122, 90, 0.15)", fg: "var(--color-jade)", border: "rgba(43, 122, 90, 0.3)" },
+    EURC: { bg: "rgba(234, 179, 8, 0.15)", fg: "var(--color-saffron)", border: "rgba(234, 179, 8, 0.3)" },
   };
-  const c = assetColors[balance.asset] ?? { bg: "var(--color-bg)", fg: "var(--color-ink-700)" };
+  const c = assetColors[assetName] ?? { bg: "rgba(255, 255, 255, 0.05)", fg: "#ffffff", border: "rgba(255, 255, 255, 0.1)" };
 
   return (
     <div
       style={{
         display: "flex", flexDirection: "column", gap: "4px",
         padding: "16px 20px", backgroundColor: c.bg, borderRadius: "12px",
-        border: `1px solid ${c.fg}22`,
+        border: `1px solid ${c.border}`,
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
         minWidth: "140px",
       }}
     >
       <p style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: c.fg }}>
-        {balance.asset}
+        {assetName}
       </p>
       <p style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", color: "var(--color-ink-900)" }}>
         {parseFloat(balance.balance).toLocaleString("en-US", { maximumFractionDigits: 4 })}

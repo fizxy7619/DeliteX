@@ -1,21 +1,61 @@
 import { useState } from "react";
 import { useDashboardContext } from "@/hooks/DashboardContext";
+import { createClient } from "@/lib/supabase/client";
 
 export default function BillsView() {
-  const { bills } = useDashboardContext();
+  const { bills, profile, refreshData } = useDashboardContext();
   const [filter, setFilter] = useState<"all" | "upcoming" | "paid">("all");
+  const [isAdding, setIsAdding] = useState(false);
 
   const today = new Date("2026-07-16").toISOString().split("T")[0]; // Mocking today for demo logic
 
-  const filteredBills = bills.filter((b) => {
+  // Handle both camelCase (domain type) and snake_case (raw DB row)
+  const getNextDueDate = (b: any) => b.nextDueDate || b.next_due_date || "";
+  const getIsAutopay = (b: any) => b.isAutopayEnabled ?? b.is_autopay_enabled ?? false;
+
+  const filteredBills = bills.filter((b: any) => {
+    const due = getNextDueDate(b);
     if (filter === "all") return true;
-    if (filter === "upcoming") return b.nextDueDate >= today;
-    return b.nextDueDate < today;
+    if (filter === "upcoming") return due >= today;
+    return due < today;
   });
 
   const totalUpcoming = bills
-    .filter((b) => b.nextDueDate >= today)
-    .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+    .filter((b: any) => getNextDueDate(b) >= today)
+    .reduce((sum: any, b: any) => sum + (Number(b.amount) || 0), 0);
+
+  const handleAddBill = async () => {
+    if (!profile) return alert("Please connect or login first.");
+    const name = prompt("Enter Bill Name (e.g., Rent, Netflix):");
+    if (!name) return;
+    const amountStr = prompt("Enter Amount (INR):");
+    if (!amountStr || isNaN(Number(amountStr))) return;
+    
+    // Set due date 7 days from now
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    const nextDueDate = d.toISOString().split("T")[0];
+
+    setIsAdding(true);
+    const supabase = createClient();
+    try {
+      await supabase.from("bills").insert({
+        user_id: profile.id,
+        name,
+        amount: Number(amountStr),
+        currency: "INR",
+        frequency: "monthly",
+        next_due_date: nextDueDate,
+        is_autopay_enabled: true
+      });
+      await refreshData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add bill.");
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -29,8 +69,13 @@ export default function BillsView() {
             Total upcoming this month: <strong style={{ color: "var(--color-ink-900)" }}>₹{totalUpcoming.toLocaleString("en-IN")}</strong>
           </p>
         </div>
-        <button className="btn btn-primary" style={{ fontSize: "0.875rem", padding: "8px 16px" }}>
-          + Add bill
+        <button 
+          className="btn btn-primary" 
+          style={{ fontSize: "0.875rem", padding: "8px 16px" }}
+          onClick={handleAddBill}
+          disabled={isAdding}
+        >
+          {isAdding ? "Adding..." : "+ Add bill"}
         </button>
       </div>
 
@@ -86,7 +131,7 @@ export default function BillsView() {
               <div>
                 <p style={{ fontWeight: 600, color: "var(--color-ink-900)" }}>{bill.name}</p>
                 <p style={{ fontSize: "0.75rem", color: "var(--color-ink-500)", marginTop: "4px" }}>
-                  Due {new Date(bill.nextDueDate).toLocaleDateString("en-IN", { month: "short", day: "numeric" })} · {bill.frequency}
+                  Due {new Date(getNextDueDate(bill)).toLocaleDateString("en-IN", { month: "short", day: "numeric" })} · {bill.frequency}
                 </p>
               </div>
             </div>
@@ -99,10 +144,10 @@ export default function BillsView() {
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", justifyContent: "flex-end", marginTop: "4px" }}>
                   <div style={{
                     width: "8px", height: "8px", borderRadius: "50%",
-                    backgroundColor: bill.isAutopayEnabled ? "var(--color-jade)" : "var(--color-ink-300)"
+                    backgroundColor: getIsAutopay(bill) ? "var(--color-jade)" : "var(--color-ink-300)"
                   }} />
                   <span style={{ fontSize: "0.6875rem", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--color-ink-500)" }}>
-                    Autopay {bill.isAutopayEnabled ? "ON" : "OFF"}
+                    Autopay {getIsAutopay(bill) ? "ON" : "OFF"}
                   </span>
                 </div>
               </div>

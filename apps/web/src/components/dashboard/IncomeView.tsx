@@ -1,14 +1,16 @@
+import { useState } from "react";
 import type { PaymentEvent } from "@/types/domain";
-import { MOCK_PAYMENT_EVENTS } from "@/lib/mock-data";
+import { useDashboardContext } from "@/hooks/DashboardContext";
+import { createClient } from "@/lib/supabase/client";
 
 function statusBadge(status: PaymentEvent["status"]) {
   const map = {
-    completed: { color: "var(--color-jade)", bg: "var(--color-jade-light)", label: "Settled" },
-    pending:   { color: "var(--color-saffron)", bg: "var(--color-saffron-light)", label: "Pending" },
-    processing:{ color: "#4F46E5", bg: "#EEF2FF", label: "Processing" },
-    failed:    { color: "#C0392B", bg: "#FEF2F2", label: "Failed" },
+    completed: { color: "var(--color-jade)", bg: "rgba(43, 122, 90, 0.2)", label: "Settled" },
+    pending:   { color: "var(--color-saffron)", bg: "rgba(234, 179, 8, 0.2)", label: "Pending" },
+    processing:{ color: "#818cf8", bg: "rgba(99, 102, 241, 0.2)", label: "Processing" },
+    failed:    { color: "#f87171", bg: "rgba(239, 68, 68, 0.2)", label: "Failed" },
   };
-  const s = map[status];
+  const s = map[status] || map.pending;
   return (
     <span style={{ fontSize: "0.6875rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: s.color, backgroundColor: s.bg, borderRadius: "100px", padding: "3px 9px" }}>
       {s.label}
@@ -17,8 +19,45 @@ function statusBadge(status: PaymentEvent["status"]) {
 }
 
 export default function IncomeView() {
-  const incoming = MOCK_PAYMENT_EVENTS.filter((e) => e.direction === "incoming");
-  const totalUsdcIn = incoming.filter((e) => e.status === "completed").reduce((s, e) => s + e.amount, 0);
+  const { paymentEvents, profile, refreshData } = useDashboardContext();
+  const [isSimulating, setIsSimulating] = useState(false);
+
+  const getAmount = (e: any) => e.amount ?? 0;
+  const getDirection = (e: any) => e.direction ?? "";
+  const getInrEquivalent = (e: any) => e.inrEquivalent ?? e.inr_equivalent ?? 0;
+  const getFxRate = (e: any) => e.fxRate ?? e.fx_rate ?? 0;
+  const getCreatedAt = (e: any) => e.createdAt ?? e.created_at ?? new Date().toISOString();
+
+  const incoming = paymentEvents.filter((e: any) => getDirection(e) === "incoming");
+  const totalUsdcIn = incoming.filter((e: any) => e.status === "completed").reduce((s: any, e: any) => s + getAmount(e), 0);
+
+  const handleSimulatePaycheck = async () => {
+    if (!profile) return alert("Please connect or login first.");
+    setIsSimulating(true);
+    const supabase = createClient();
+    try {
+      await supabase.from("payment_events").insert({
+        user_id: profile.id,
+        direction: "incoming",
+        bucket: "income",
+        status: "completed",
+        amount: 1000,
+        currency: "USDC",
+        inr_equivalent: 83500,
+        fx_rate: 83.5,
+        fx_spread_percent: 1,
+        counterparty: "Deel / Acme Corp",
+        description: "Monthly Salary",
+        rail: "stellar"
+      });
+      await refreshData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to simulate paycheck.");
+    } finally {
+      setIsSimulating(false);
+    }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
@@ -30,25 +69,21 @@ export default function IncomeView() {
             Incoming payments
           </h2>
         </div>
-        <div className="card" style={{ padding: "16px 24px", flexShrink: 0 }}>
-          <p style={{ fontSize: "0.75rem", color: "var(--color-ink-500)", marginBottom: "4px" }}>Total settled (July)</p>
-          <p style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", color: "var(--color-jade)" }}>
-            ${totalUsdcIn.toLocaleString("en-US")} USDC
-          </p>
+        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+          <button 
+            className="btn btn-primary"
+            onClick={handleSimulatePaycheck}
+            disabled={isSimulating}
+          >
+            {isSimulating ? "Simulating..." : "Simulate +$1000 Paycheck"}
+          </button>
+          <div className="card" style={{ padding: "16px 24px", flexShrink: 0 }}>
+            <p style={{ fontSize: "0.75rem", color: "var(--color-ink-500)", marginBottom: "4px" }}>Total settled (July)</p>
+            <p style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", color: "var(--color-jade)" }}>
+              ${totalUsdcIn.toLocaleString("en-US")} USDC
+            </p>
+          </div>
         </div>
-      </div>
-
-      {/* Stellary note */}
-      <div style={{
-        display: "flex", alignItems: "flex-start", gap: "12px", padding: "14px 16px",
-        backgroundColor: "var(--color-jade-light)", borderRadius: "10px", border: "1px solid rgba(43,122,90,0.2)"
-      }}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-jade)" strokeWidth="2" style={{ flexShrink: 0, marginTop: "1px" }}>
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        <p style={{ fontSize: "0.8125rem", color: "var(--color-jade)", lineHeight: 1.6 }}>
-          <strong>Phase 3:</strong> Payments will settle directly via Stellar in 3–5 seconds. Current transactions are mocked for UI development.
-        </p>
       </div>
 
       {/* Table */}
@@ -56,7 +91,7 @@ export default function IncomeView() {
         {/* Head */}
         <div style={{
           display: "grid", gridTemplateColumns: "1fr auto auto auto",
-          padding: "10px 20px", backgroundColor: "var(--color-bg)",
+          padding: "10px 20px", backgroundColor: "var(--color-bg-card)",
           borderBottom: "1px solid var(--color-border)",
           fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--color-ink-500)",
           gap: "16px"
@@ -66,31 +101,35 @@ export default function IncomeView() {
           <span style={{ textAlign: "right" }}>FX Rate</span>
           <span style={{ textAlign: "right" }}>Status</span>
         </div>
-        {incoming.map((evt, i) => (
+        {incoming.length === 0 ? (
+          <div style={{ padding: "40px", textAlign: "center", backgroundColor: "var(--color-bg)", color: "var(--color-ink-500)", fontSize: "0.875rem" }}>
+            No incoming payments found. Simulate a paycheck to test!
+          </div>
+        ) : incoming.map((evt: any, i: number) => (
           <div
             key={evt.id}
             style={{
               display: "grid", gridTemplateColumns: "1fr auto auto auto",
               padding: "16px 20px", gap: "16px", alignItems: "center",
-              backgroundColor: "#fff",
+              backgroundColor: "var(--color-bg)",
               borderBottom: i < incoming.length - 1 ? "1px solid var(--color-border)" : "none",
             }}
           >
             <div>
               <p style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--color-ink-900)" }}>{evt.description}</p>
               <p style={{ fontSize: "0.75rem", color: "var(--color-ink-500)", marginTop: "3px" }}>
-                {evt.counterparty} · {new Date(evt.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                {evt.counterparty} · {new Date(getCreatedAt(evt)).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
               </p>
             </div>
             <div style={{ textAlign: "right" }}>
-              <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "var(--color-jade)" }}>+{evt.amount} {evt.currency}</p>
-              {evt.inrEquivalent && (
-                <p style={{ fontSize: "0.75rem", color: "var(--color-ink-500)" }}>≈ ₹{evt.inrEquivalent.toLocaleString("en-IN")}</p>
+              <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: "var(--color-jade)" }}>+{getAmount(evt)} {evt.currency}</p>
+              {getInrEquivalent(evt) > 0 && (
+                <p style={{ fontSize: "0.75rem", color: "var(--color-ink-500)" }}>≈ ₹{getInrEquivalent(evt).toLocaleString("en-IN")}</p>
               )}
             </div>
             <div style={{ textAlign: "right" }}>
-              {evt.fxRate ? (
-                <p style={{ fontSize: "0.8125rem", color: "var(--color-ink-700)" }}>₹{evt.fxRate}</p>
+              {getFxRate(evt) ? (
+                <p style={{ fontSize: "0.8125rem", color: "var(--color-ink-700)" }}>₹{getFxRate(evt)}</p>
               ) : (
                 <p style={{ fontSize: "0.8125rem", color: "var(--color-ink-300)" }}>—</p>
               )}
@@ -99,11 +138,6 @@ export default function IncomeView() {
           </div>
         ))}
       </div>
-
-      {/* Empty state for when real data hooks in */}
-      <p style={{ fontSize: "0.8125rem", color: "var(--color-ink-300)", textAlign: "center", paddingBottom: "8px" }}>
-        Showing mock data · Real payments via Stellar in Phase 3
-      </p>
     </div>
   );
 }

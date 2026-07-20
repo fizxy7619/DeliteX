@@ -1,9 +1,47 @@
 import { useState } from "react";
 import { useDashboardContext } from "@/hooks/DashboardContext";
+import { createClient } from "@/lib/supabase/client";
 
 export default function FamilyView() {
-  const { family } = useDashboardContext();
+  const { family, profile, refreshData } = useDashboardContext();
   const [activeTab, setActiveTab] = useState<"recipients" | "history">("recipients");
+  const [isAdding, setIsAdding] = useState(false);
+
+  // Handle both camelCase (domain type) and snake_case (raw DB row)
+  const getMonthlyAllowance = (f: any) => f.monthlyAllowance ?? f.monthly_allowance ?? 0;
+  const getPayeeLabel = (f: any) => f.payeeLabel ?? f.payee_label ?? "";
+
+  const handleAddRecipient = async () => {
+    if (!profile) return alert("Please connect or login first.");
+    const name = prompt("Enter Recipient Name:");
+    if (!name) return;
+    const relationship = prompt("Relationship (e.g., Parent, Sibling):") || "Family";
+    const amountStr = prompt("Monthly Allowance (INR):");
+    const amount = Number(amountStr) || 0;
+
+    setIsAdding(true);
+    const supabase = createClient();
+    try {
+      await supabase.from("family_recipients").insert({
+        user_id: profile.id,
+        name,
+        relationship,
+        avatar_initials: name.charAt(0).toUpperCase(),
+        payee_type: "upi",
+        payee_identifier: "placeholder@upi",
+        payee_label: "UPI",
+        monthly_allowance: amount,
+        allowance_enabled: amount > 0,
+        total_transferred_inr: 0
+      });
+      await refreshData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add recipient.");
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -17,8 +55,13 @@ export default function FamilyView() {
             Manage monthly allowances and send money home.
           </p>
         </div>
-        <button className="btn btn-primary" style={{ fontSize: "0.875rem", padding: "8px 16px" }}>
-          + Add recipient
+        <button 
+          className="btn btn-primary" 
+          style={{ fontSize: "0.875rem", padding: "8px 16px" }}
+          onClick={handleAddRecipient}
+          disabled={isAdding}
+        >
+          {isAdding ? "Adding..." : "+ Add recipient"}
         </button>
       </div>
 
@@ -46,10 +89,10 @@ export default function FamilyView() {
       {activeTab === "recipients" ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "16px" }}>
           {family.length === 0 ? (
-            <div style={{ padding: "40px", textAlign: "center", backgroundColor: "#fff", color: "var(--color-ink-500)", fontSize: "0.875rem", borderRadius: "12px", border: "1px solid var(--color-border)", gridColumn: "1 / -1" }}>
+            <div style={{ padding: "40px", textAlign: "center", backgroundColor: "var(--color-bg-card)", color: "var(--color-ink-500)", fontSize: "0.875rem", borderRadius: "12px", border: "1px solid var(--color-border)", gridColumn: "1 / -1" }}>
               No family recipients found.
             </div>
-          ) : family.map((f) => (
+          ) : family.map((f: any) => (
             <div key={f.id} className="card" style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                 <div style={{
@@ -63,7 +106,7 @@ export default function FamilyView() {
                 <div>
                   <p style={{ fontWeight: 600, color: "var(--color-ink-900)" }}>{f.name}</p>
                   <p style={{ fontSize: "0.75rem", color: "var(--color-ink-500)", marginTop: "2px" }}>
-                    {f.relationship} · {f.payeeLabel}
+                    {f.relationship} · {getPayeeLabel(f)}
                   </p>
                 </div>
               </div>
@@ -72,7 +115,7 @@ export default function FamilyView() {
                 <p style={{ fontSize: "0.75rem", color: "var(--color-ink-500)", marginBottom: "4px" }}>Monthly Allowance</p>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                   <p style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", color: "var(--color-ink-900)" }}>
-                    ₹{Number(f.monthlyAllowance).toLocaleString("en-IN")}
+                    ₹{Number(getMonthlyAllowance(f)).toLocaleString("en-IN")}
                   </p>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
                     <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "var(--color-jade)" }} />
