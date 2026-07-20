@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useDashboardContext } from "@/hooks/DashboardContext";
 import { createClient } from "@/lib/supabase/client";
@@ -8,11 +10,17 @@ type RawBill = Bill & { next_due_date?: string; is_autopay_enabled?: boolean };
 export default function BillsView() {
   const { bills, profile, refreshData } = useDashboardContext();
   const [filter, setFilter] = useState<"all" | "upcoming" | "paid">("all");
+  
   const [isAdding, setIsAdding] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  
+  const [newName, setNewName] = useState("");
+  const [newPayee, setNewPayee] = useState("");
+  const [newAmount, setNewAmount] = useState("");
+  const [newFrequency, setNewFrequency] = useState<"monthly" | "weekly" | "yearly">("monthly");
 
   const today = new Date().toISOString().split("T")[0];
 
-  // Handle both camelCase (domain type) and snake_case (raw DB row)
   const getNextDueDate = (b: RawBill) => b.nextDueDate || b.next_due_date || "";
   const getIsAutopay = (b: RawBill) => b.isAutopayEnabled ?? b.is_autopay_enabled ?? false;
 
@@ -29,10 +37,7 @@ export default function BillsView() {
 
   const handleAddBill = async () => {
     if (!profile) return alert("Please connect or login first.");
-    const name = prompt("Enter Bill Name (e.g., Rent, Netflix):");
-    if (!name) return;
-    const amountStr = prompt("Enter Amount (INR):");
-    if (!amountStr || isNaN(Number(amountStr))) return;
+    if (!newName || !newPayee || !newAmount) return alert("Please fill all fields.");
     
     // Set due date 7 days from now
     const d = new Date();
@@ -44,14 +49,21 @@ export default function BillsView() {
     try {
       await supabase.from("bills").insert({
         user_id: profile.id,
-        name,
-        amount: Number(amountStr),
+        name: newName,
+        payee: newPayee,
+        payee_type: newPayee.startsWith("G") ? "wallet" : "upi",
+        amount: Number(newAmount),
         currency: "INR",
-        frequency: "monthly",
+        frequency: newFrequency,
         next_due_date: nextDueDate,
         is_autopay_enabled: true
       });
       await refreshData();
+      setShowAddModal(false);
+      setNewName("");
+      setNewPayee("");
+      setNewAmount("");
+      setNewFrequency("monthly");
     } catch (err) {
       console.error(err);
       alert("Failed to add bill.");
@@ -75,10 +87,9 @@ export default function BillsView() {
         <button 
           className="btn btn-primary" 
           style={{ fontSize: "0.875rem", padding: "8px 16px" }}
-          onClick={handleAddBill}
-          disabled={isAdding}
+          onClick={() => setShowAddModal(true)}
         >
-          {isAdding ? "Adding..." : "+ Add bill"}
+          + Add bill
         </button>
       </div>
 
@@ -161,6 +172,31 @@ export default function BillsView() {
           </div>
         ))}
       </div>
+
+      {/* Add Bill Modal */}
+      {showAddModal && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
+          <div className="card" style={{ width: "400px", padding: "24px", display: "flex", flexDirection: "column", gap: "16px", backgroundColor: "#fff", borderRadius: "16px" }}>
+            <h3 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#1E293B" }}>Add New Bill</h3>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <input type="text" placeholder="Bill Name (e.g. Rent, Electricity)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0" }} value={newName} onChange={e => setNewName(e.target.value)} />
+              <input type="text" placeholder="Payee (Stellar Address or UPI)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0" }} value={newPayee} onChange={e => setNewPayee(e.target.value)} />
+              <input type="number" placeholder="Amount (INR)" className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0" }} value={newAmount} onChange={e => setNewAmount(e.target.value)} />
+              <select className="input" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0", backgroundColor: "#fff" }} value={newFrequency} onChange={e => setNewFrequency(e.target.value as "monthly" | "weekly" | "yearly")}>
+                <option value="monthly">Monthly</option>
+                <option value="weekly">Weekly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+
+            <div style={{ display: "flex", gap: "12px", marginTop: "8px", justifyContent: "flex-end" }}>
+              <button className="btn btn-ghost" style={{ padding: "8px 16px" }} onClick={() => setShowAddModal(false)}>Cancel</button>
+              <button className="btn btn-primary" style={{ padding: "8px 16px" }} onClick={handleAddBill} disabled={isAdding}>{isAdding ? "Adding..." : "Add"}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
