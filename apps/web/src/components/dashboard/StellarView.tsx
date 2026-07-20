@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { isConnected, getPublicKey } from "@stellar/freighter-api";
+import { isConnected, requestAccess } from "@stellar/freighter-api";
 
 interface StellarBalance {
   asset: string;
@@ -114,7 +114,7 @@ export default function StellarView() {
       if (!(await isConnected())) {
         throw new Error("Freighter wallet not installed or unavailable.");
       }
-      const pubKey = await getPublicKey();
+      const pubKey = await requestAccess();
       const res = await fetch("/api/stellar/account", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
