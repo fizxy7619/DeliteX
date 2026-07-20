@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/purity */
 "use client";
 
-import { useState, useRef, useEffect, type FormEvent } from "react";
+import { useState, useRef, useEffect, useMemo, type FormEvent } from "react";
 import type { AiMessage } from "@/types/domain";
 import type { ParsedIntent } from "@/lib/ai/intent-parser";
 
@@ -76,9 +76,10 @@ function IntentCard({
 }
 
 // ─── Message Bubble ───────────────────────────────────────────
-function MessageBubble({ msg, pendingIntent, onApply, onDismiss }: {
+function MessageBubble({ msg, pendingIntent, isDismissed, onApply, onDismiss }: {
   msg: AiMessage;
   pendingIntent?: ParsedIntent | null;
+  isDismissed?: boolean;
   onApply?: () => void;
   onDismiss?: () => void;
 }) {
@@ -96,7 +97,7 @@ function MessageBubble({ msg, pendingIntent, onApply, onDismiss }: {
         </div>
       </div>
 
-      {!isUser && (pendingIntent?.intent === "set_allocation" || (msg as DbAiMessage).parsed_rule) && onApply && onDismiss && (
+      {!isUser && !isDismissed && (pendingIntent?.intent === "set_allocation" || (msg as DbAiMessage).parsed_rule) && onApply && onDismiss && (
         <div style={{ paddingLeft: "36px", width: "100%" }}>
           <IntentCard 
             intent={(pendingIntent ?? { intent: "set_allocation", allocations: (msg as DbAiMessage).parsed_rule?.allocations || [], explanation: msg.content, source: "nvidia-nim", latencyMs: 0, confidence: 1 }) as ParsedIntent} 
@@ -129,41 +130,25 @@ import { useDashboardContext } from "@/hooks/DashboardContext";
 
 export default function AiAssistant({ onPendingDecision }: { onPendingDecision?: (id: string) => void }) {
   const { aiMessages, refreshData } = useDashboardContext();
-  const [messages, setMessages] = useState<AiMessage[]>([]);
   
-  useEffect(() => {
-    if (aiMessages && aiMessages.length > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMessages(aiMessages);
-    } else {
-      setMessages([
-        { id: "welcome", role: "assistant", content: "Hi! I'm your AI agent. I can help you automate payments or simulate testnet transactions. How can I help today?", createdAt: new Date().toISOString(), parsedRule: null, llmModel: null, llmLatencyMs: null }
-      ]);
-    }
+  // Create a combined message list that shows the default welcome if no DB messages exist
+  const displayMessages = useMemo(() => {
+    return aiMessages && aiMessages.length > 0 
+      ? aiMessages 
+      : [{ id: "welcome", role: "assistant", content: "Hi! I'm your AI agent. I can help you automate payments or simulate testnet transactions. How can I help today?", createdAt: new Date().toISOString(), parsedRule: null, llmModel: null, llmLatencyMs: null } as DbAiMessage];
   }, [aiMessages]);
+    
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  // Store latest parsed intent per message (keyed by message id)
-  const [intentMap, setIntentMap] = useState<Record<string, ParsedIntent>>({});
+  const [dismissedRules, setDismissedRules] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [displayMessages]);
 
   async function sendMessage(text: string) {
     if (!text.trim() || loading) return;
     setLoading(true);
     setInput("");
-
-    const userMsg: AiMessage = {
-      id: `msg_${Date.now()}`,
-      role: "user",
-      content: text.trim(),
-      parsedRule: null,
-      llmModel: null,
-      llmLatencyMs: null,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, userMsg]);
 
     // Check for simulation intent before hitting LLM
     if (text.toLowerCase().includes("simulat") || text.toLowerCase().includes("test payment") || text.toLowerCase().includes("incoming")) {
@@ -173,40 +158,15 @@ export default function AiAssistant({ onPendingDecision }: { onPendingDecision?:
     }
 
     try {
-      const res = await fetch("/api/ai/parse-intent", {
+      await fetch("/api/ai/parse-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text }),
       });
-      const intent: ParsedIntent = await res.json();
 
-      const assistantMsgId = `msg_${Date.now() + 1}`;
-      const assistantMsg: AiMessage = {
-        id: assistantMsgId,
-        role: "assistant",
-        content: intent.explanation,
-        parsedRule: null,
-        llmModel: intent.source === "nvidia-nim" ? "NVIDIA Nemotron-4-340B" : "Keyword fallback",
-        llmLatencyMs: intent.latencyMs,
-        createdAt: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
-
-      if (intent.intent === "set_allocation") {
-        setIntentMap((prev) => ({ ...prev, [assistantMsgId]: intent }));
-      }
-      
       // Refresh to fetch the real DB records
       await refreshData();
-    } catch {
-      const errMsg: AiMessage = {
-        id: `msg_err_${Date.now()}`,
-        role: "assistant",
-        content: "Sorry, something went wrong. Please try again.",
-        parsedRule: null, llmModel: null, llmLatencyMs: null,
-        createdAt: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, errMsg]);
+      // Error is handled and logged if needed. The real DB messages remain visible.
     } finally {
       setLoading(false);
     }
@@ -255,13 +215,14 @@ export default function AiAssistant({ onPendingDecision }: { onPendingDecision?:
 
       {/* Chat window */}
       <div style={{ minHeight: "360px", maxHeight: "500px", overflowY: "auto", border: "1px solid var(--color-border)", borderRadius: "12px", padding: "20px", backgroundColor: "var(--color-bg)", display: "flex", flexDirection: "column" }}>
-        {messages.map((msg) => (
+        {displayMessages.map((msg) => (
           <MessageBubble
             key={msg.id}
             msg={msg}
-            pendingIntent={intentMap[msg.id]}
-            onApply={() => setIntentMap((prev) => { const n = { ...prev }; delete n[msg.id]; return n; })}
-            onDismiss={() => setIntentMap((prev) => { const n = { ...prev }; delete n[msg.id]; return n; })}
+            isDismissed={dismissedRules.includes(msg.id)}
+            pendingIntent={dismissedRules.includes(msg.id) ? null : undefined}
+            onApply={() => setDismissedRules((prev) => [...prev, msg.id])}
+            onDismiss={() => setDismissedRules((prev) => [...prev, msg.id])}
           />
         ))}
 

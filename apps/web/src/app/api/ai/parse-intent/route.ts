@@ -7,12 +7,18 @@ export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (!user || authErr) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const serviceSupabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  );
 
   const body = await request.json().catch(() => ({}));
   if (!body.message?.trim()) {
@@ -20,7 +26,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 1. Insert User Message
-  await supabase.from("ai_chat_messages").insert({
+  await serviceSupabase.from("ai_chat_messages").insert({
     user_id: user.id,
     role: "user",
     content: body.message,
@@ -31,7 +37,7 @@ export async function POST(request: NextRequest) {
   const intent = await parseIntent(body.message);
 
   // 3. Insert Assistant Message
-  await supabase.from("ai_chat_messages").insert({
+  await serviceSupabase.from("ai_chat_messages").insert({
     user_id: user.id,
     role: "assistant",
     content: intent.explanation,
