@@ -99,7 +99,7 @@ function MessageBubble({ msg, pendingIntent, onApply, onDismiss }: {
       {!isUser && (pendingIntent?.intent === "set_allocation" || (msg as DbAiMessage).parsed_rule) && onApply && onDismiss && (
         <div style={{ paddingLeft: "36px", width: "100%" }}>
           <IntentCard 
-            intent={pendingIntent ?? { intent: "set_allocation", allocations: (msg as DbAiMessage).parsed_rule?.allocations || [], explanation: msg.content, source: "nvidia-nim", latencyMs: 0, confidence: 1 }} 
+            intent={(pendingIntent ?? { intent: "set_allocation", allocations: (msg as DbAiMessage).parsed_rule?.allocations || [], explanation: msg.content, source: "nvidia-nim", latencyMs: 0, confidence: 1 }) as ParsedIntent} 
             onApply={onApply} 
             onDismiss={onDismiss} 
           />
