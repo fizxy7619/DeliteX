@@ -112,6 +112,9 @@ function DashboardContent({ userEmail }: { userEmail: string }) {
       
       const { address: publicKey } = await StellarWalletsKit.authModal();
       
+      // Persist the selected wallet ID so other components know which module to use
+      localStorage.setItem("delite_wallet_id", StellarWalletsKit.selectedModule.productId);
+      
       // Save to Supabase
       await updateStellarPublicKey(publicKey);
 
@@ -127,6 +130,7 @@ function DashboardContent({ userEmail }: { userEmail: string }) {
 
   const handleDisconnect = async () => {
     try {
+      localStorage.removeItem("delite_wallet_id");
       await updateStellarPublicKey("");
       await refreshStellar();
     } catch(err) {

@@ -52,9 +52,10 @@ export default function AgentDecisionPanel({ decisionId, proposal, onExecuted, o
       try {
         // Ensure kit is initialized in case of page refresh
         try {
+          const storedWallet = localStorage.getItem("delite_wallet_id") || "freighter";
           StellarWalletsKit.init({
             network: Networks.TESTNET,
-            selectedWalletId: "freighter", // default fallback, kit usually caches the selection
+            selectedWalletId: storedWallet, // Use the dynamically saved wallet ID from login
             modules: [new FreighterModule(), new xBullModule(), new AlbedoModule()],
           });
         } catch (e) {
