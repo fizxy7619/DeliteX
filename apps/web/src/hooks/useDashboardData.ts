@@ -57,13 +57,93 @@ export function useDashboardData() {
         supabase.from("ai_chat_messages").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
       ]);
 
-      setProfile(pData as UserProfile);
-      setPaymentEvents((peData || []) as PaymentEvent[]);
-      setBills((bData || []) as Bill[]);
-      setFamily((fData || []) as FamilyRecipient[]);
-      setVault(vData as SavingsVault | null);
-      setRules((rData || []) as AllocationRule[]);
-      setAiMessages((mData || []) as AiMessage[]);
+      setProfile({
+        ...pData,
+        fullName: pData?.full_name,
+        avatarUrl: pData?.avatar_url,
+        kycStatus: pData?.kyc_status,
+        stellarPublicKey: pData?.stellar_public_key,
+        inrPayoutMethod: pData?.inr_payout_method,
+        notifyOnIncoming: pData?.notify_on_incoming,
+        notifyOnPayout: pData?.notify_on_payout,
+        createdAt: pData?.created_at,
+        updatedAt: pData?.updated_at
+      } as UserProfile);
+
+      setPaymentEvents((peData || []).map((pe: any) => ({
+        ...pe,
+        userId: pe.user_id,
+        inrEquivalent: pe.inr_equivalent,
+        fxRate: pe.fx_rate,
+        fxSpreadPercent: pe.fx_spread_percent,
+        stellarTxHash: pe.stellar_tx_hash,
+        stellarLedger: pe.stellar_ledger,
+        sorobanContractId: pe.soroban_contract_id,
+        settledAt: pe.settled_at,
+        createdAt: pe.created_at
+      })));
+
+      setBills((bData || []).map((b: any) => ({
+        ...b,
+        userId: b.user_id,
+        payeeType: b.payee_type,
+        dueDayOfMonth: b.due_day_of_month,
+        nextDueDate: b.next_due_date,
+        isPaused: b.is_paused,
+        isAutopayEnabled: b.is_autopay_enabled,
+        lastPaidAt: b.last_paid_at,
+        lastPaidAmount: b.last_paid_amount,
+        createdAt: b.created_at
+      })));
+
+      setFamily((fData || []).map((f: any) => ({
+        ...f,
+        userId: f.user_id,
+        avatarInitials: f.avatar_initials,
+        payeeType: f.payee_type,
+        payeeIdentifier: f.payee_identifier,
+        payeeLabel: f.payee_label,
+        monthlyAllowance: f.monthly_allowance,
+        allowanceEnabled: f.allowance_enabled,
+        lastTransferAmount: f.last_transfer_amount,
+        lastTransferAt: f.last_transfer_at,
+        totalTransferredInr: f.total_transferred_inr,
+        createdAt: f.created_at
+      })));
+
+      setVault(vData ? {
+        ...vData,
+        userId: vData.user_id,
+        principalUsdc: vData.principal_usdc,
+        totalValueUsdc: vData.total_value_usdc,
+        yieldEarnedUsdc: vData.yield_earned_usdc,
+        estimatedApyPercent: vData.estimated_apy_percent,
+        sorobanContractId: vData.soroban_contract_id,
+        vaultSharesHeld: vData.vault_shares_held,
+        autoDepositThresholdInr: vData.auto_deposit_threshold_inr,
+        autoDepositEnabled: vData.auto_deposit_enabled,
+        lastYieldClaimedAt: vData.last_yield_claimed_at,
+        updatedAt: vData.updated_at
+      } : null);
+
+      setRules((rData || []).map((r: any) => ({
+        ...r,
+        userId: r.user_id,
+        incomeSourceFilter: r.income_source_filter,
+        isActive: r.is_active,
+        aiGenerated: r.ai_generated,
+        aiPrompt: r.ai_prompt,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at
+      })));
+
+      setAiMessages((mData || []).map((m: any) => ({
+        ...m,
+        parsedRule: m.parsed_rule,
+        llmModel: m.llm_model,
+        llmLatencyMs: m.llm_latency_ms,
+        createdAt: m.created_at
+      })));
 
       // Fetch stellar account
       if (pData?.stellar_public_key) {
