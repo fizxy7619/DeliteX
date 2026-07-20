@@ -68,7 +68,6 @@ export default function StellarView() {
   const [x402Loading, setX402Loading] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  const [txStatus, setTxStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
 
   const fetchAccount = useCallback(async (fund = false) => {
     setLoading(true);
@@ -193,15 +192,7 @@ export default function StellarView() {
     }
   }
 
-  async function sendTestAllocation() {
-    setTxStatus("pending");
-    try {
-      await new Promise(r => setTimeout(r, 2000));
-      setTxStatus("success");
-    } catch {
-      setTxStatus("error");
-    }
-  }
+
 
   function copyAddress() {
     if (account?.publicKey) {

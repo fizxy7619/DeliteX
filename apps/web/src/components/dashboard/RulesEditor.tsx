@@ -14,7 +14,7 @@ export default function RulesEditor() {
   ]);
   const [saving, setSaving] = useState(false);
 
-  const toggleRule = async (ruleId: string, currentState: boolean) => {
+  const toggleRule = async () => {
     // Optimistically update
     // In a real app, we'd hit an API to toggle this specific rule.
     // We'll reuse the apply-rule endpoint to recreate the rule as active for now.
@@ -40,8 +40,8 @@ export default function RulesEditor() {
       }
       await refreshData();
       setIsEditing(false);
-    } catch (e: any) {
-      alert("Error: " + e.message);
+    } catch (e) {
+      alert("Error: " + (e as Error).message);
     } finally {
       setSaving(false);
     }
@@ -95,7 +95,7 @@ export default function RulesEditor() {
                 <input 
                   type="checkbox" 
                   checked={r.isActive} 
-                  onChange={() => toggleRule(r.id, r.isActive)}
+                  onChange={() => toggleRule()}
                   style={{ display: "none" }} 
                 />
                 <div style={{

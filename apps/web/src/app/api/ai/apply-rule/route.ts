@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   
   // Auto-fill remainder to 'income' bucket
   if (total < 100) {
-    const existingIncome = allocations.find((a: any) => a.bucket === "income");
+    const existingIncome = allocations.find((a: { bucket: string; percent: number }) => a.bucket === "income");
     if (existingIncome) {
       existingIncome.percent += (100 - total);
     } else {
