@@ -74,7 +74,7 @@ export default function Solution() {
               paddingTop: "4px",
             }}
           >
-            DeliteX connects the global dollar economy directly to India's UPI rails,
+            DeliteX connects the global dollar economy directly to India&apos;s UPI rails,
             with an AI agent sitting in the middle to make every rupee work harder.
           </p>
         </div>

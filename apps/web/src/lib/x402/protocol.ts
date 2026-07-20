@@ -123,7 +123,9 @@ export async function verifyPaymentHeader(
   if (process.env.X402_STUB_MODE !== "false") {
     // Record nonce in db to simulate anti-replay, but don't fail if db not hooked up
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const cookieStore = await require("next/headers").cookies();
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { createServerClient } = require("@supabase/ssr");
       const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,

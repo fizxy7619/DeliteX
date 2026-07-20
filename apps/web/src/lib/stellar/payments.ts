@@ -17,7 +17,6 @@
 import type { PaymentEvent } from "@/types/domain";
 import {
   getHorizonServer,
-  STELLAR_ASSETS,
   IS_TESTNET_MODE,
 } from "./config";
 import type { Horizon } from "@stellar/stellar-sdk";

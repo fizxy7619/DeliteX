@@ -28,7 +28,7 @@ interface DashboardShellProps {
 
 export default function DashboardShell({ userEmail }: DashboardShellProps) {
   const [activeSection, setActiveSection] = useState<Section>("overview");
-  const [pendingDecisions, setPendingDecisions] = useState(0);
+  const pendingDecisions = 0;
 
   function renderSection() {
     switch (activeSection) {

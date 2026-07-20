@@ -9,7 +9,6 @@ export default function SavingsView() {
 
   const inrPerUsdc = 84.1;
   const totalInr = vault.totalValueUsdc * inrPerUsdc;
-  const yieldInr = vault.yieldEarnedUsdc * inrPerUsdc;
   const yieldPct = ((vault.yieldEarnedUsdc / vault.principalUsdc) * 100).toFixed(2);
 
   // Simulated monthly projection

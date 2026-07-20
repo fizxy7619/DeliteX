@@ -84,7 +84,7 @@ function keywordFallback(text: string): ParsedIntent {
 
 /** Parse user text into a structured intent using NVIDIA Nemotron */
 export async function parseIntent(userText: string): Promise<ParsedIntent> {
-  const start = Date.now();
+  // const start = Date.now();
 
   const llmResponse = await callLLM([
     { role: "system", content: SYSTEM_PROMPT },
