@@ -36,22 +36,13 @@ export default function IncomeView() {
   const handleSimulatePaycheck = async () => {
     if (!profile) return alert("Please connect or login first.");
     setIsSimulating(true);
-    const supabase = createClient();
     try {
-      await supabase.from("payment_events").insert({
-        user_id: profile.id,
-        direction: "incoming",
-        bucket: "income",
-        status: "completed",
-        amount: 1000,
-        currency: "USDC",
-        inr_equivalent: 83500,
-        fx_rate: 83.5,
-        fx_spread_percent: 1,
-        counterparty: "Deel / Acme Corp",
-        description: "Monthly Salary",
-        rail: "stellar"
+      const res = await fetch("/api/stellar/simulate-paycheck", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amountXlm: "1000" })
       });
+      if (!res.ok) throw new Error("Failed to simulate");
       await refreshData();
     } catch (err) {
       console.error(err);
