@@ -11,9 +11,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import {
   getAccountBalances,
-  generateKeypair,
   fundTestnetAccount,
-  establishTrustlines,
 } from "@/lib/stellar/accounts";
 import { IS_TESTNET_MODE } from "@/lib/stellar/config";
 

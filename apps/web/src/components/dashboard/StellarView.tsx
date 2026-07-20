@@ -194,7 +194,7 @@ export default function StellarView() {
     try {
       await new Promise(r => setTimeout(r, 2000));
       setTxStatus("success");
-    } catch (_e) {
+    } catch {
       setTxStatus("error");
     }
   }

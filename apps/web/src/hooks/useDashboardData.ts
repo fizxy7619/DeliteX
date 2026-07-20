@@ -87,7 +87,10 @@ export function useDashboardData() {
   }, [supabase]);
 
   useEffect(() => {
-    fetchData();
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchData]);
 
   // Refreshes only stellar account

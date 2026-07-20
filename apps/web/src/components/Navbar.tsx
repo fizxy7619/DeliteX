@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 
 export default function Navbar() {
@@ -35,9 +36,11 @@ export default function Navbar() {
       >
         {/* Wordmark */}
         <Link href="/" aria-label="DeliteX home" style={{ display: "flex", alignItems: "center" }}>
-          <img 
+          <Image 
             src="/images/logo_transparent.png" 
             alt="DeliteX" 
+            width={120}
+            height={36}
             style={{ 
               height: "36px", 
               width: "auto",

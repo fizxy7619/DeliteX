@@ -86,7 +86,7 @@ function DashboardContent({ userEmail }: { userEmail: string }) {
             Connect your Wallet
           </h2>
           <p style={{ color: "var(--color-ink-500)", maxWidth: "400px" }}>
-            You need a Stellar Testnet wallet to use the dashboard. Connect with Freighter, xBull, or Albedo, and we'll automatically fund it with 10,000 XLM via Friendbot.
+            You need a Stellar Testnet wallet to use the dashboard. Connect with Freighter, xBull, or Albedo, and we&apos;ll automatically fund it with 10,000 XLM via Friendbot.
           </p>
           <button 
             className="btn btn-primary" 

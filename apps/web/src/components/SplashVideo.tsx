@@ -11,7 +11,8 @@ export default function SplashVideo() {
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (mediaQuery.matches) {
-      setShowSplash(false);
+      const timer = setTimeout(() => setShowSplash(false), 0);
+      return () => clearTimeout(timer);
     }
   }, []);
 

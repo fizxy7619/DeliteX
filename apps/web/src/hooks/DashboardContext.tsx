@@ -24,7 +24,7 @@ interface DashboardContextType {
   aiMessages: AiMessage[];
   stellarAccount: StellarAccountInfo | null;
   refreshData: () => Promise<void>;
-  refreshStellar: (fund?: boolean) => Promise<any>;
+  refreshStellar: (fund?: boolean) => Promise<unknown>;
   updateStellarPublicKey: (publicKey: string) => Promise<boolean>;
 }
 
