@@ -21,7 +21,6 @@ type RawPaymentEvent = PaymentEvent & { inr_equivalent?: number; fx_rate?: numbe
 
 export default function IncomeView() {
   const { paymentEvents, profile, refreshData } = useDashboardContext();
-  const [isSimulating, setIsSimulating] = useState(false);
 
   const getAmount = (e: RawPaymentEvent) => e.amount ?? 0;
   const getDirection = (e: RawPaymentEvent) => e.direction ?? "";
@@ -31,26 +30,6 @@ export default function IncomeView() {
 
   const incoming = paymentEvents.filter((e: RawPaymentEvent) => getDirection(e) === "incoming");
   const totalUsdcIn = incoming.filter((e: RawPaymentEvent) => e.status === "completed").reduce((s: number, e: RawPaymentEvent) => s + getAmount(e), 0);
-
-  const handleSimulatePaycheck = async () => {
-    if (!profile) return alert("Please connect or login first.");
-    setIsSimulating(true);
-    try {
-      const res = await fetch("/api/stellar/simulate-paycheck", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amountXlm: "1000" })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to simulate");
-      await refreshData();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to simulate paycheck: " + (err as Error).message);
-    } finally {
-      setIsSimulating(false);
-    }
-  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
@@ -63,13 +42,6 @@ export default function IncomeView() {
           </h2>
         </div>
         <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-          <button 
-            className="btn btn-primary"
-            onClick={handleSimulatePaycheck}
-            disabled={isSimulating}
-          >
-            {isSimulating ? "Simulating..." : "Simulate +$1000 Paycheck"}
-          </button>
           <div className="card" style={{ padding: "16px 24px", flexShrink: 0 }}>
             <p style={{ fontSize: "0.75rem", color: "var(--color-ink-500)", marginBottom: "4px" }}>Total settled (July)</p>
             <p style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", color: "var(--color-jade)" }}>
@@ -96,7 +68,7 @@ export default function IncomeView() {
         </div>
         {incoming.length === 0 ? (
           <div style={{ padding: "40px", textAlign: "center", backgroundColor: "var(--color-bg)", color: "var(--color-ink-500)", fontSize: "0.875rem" }}>
-            No incoming payments found. Simulate a paycheck to test!
+            No incoming payments found yet.
           </div>
         ) : incoming.map((evt: RawPaymentEvent, i: number) => (
           <div
