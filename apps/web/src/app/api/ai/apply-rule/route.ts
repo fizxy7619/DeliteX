@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
 
   // Combine duplicates (e.g. if we mapped 'remittance' to 'income' and 'income' already exists)
   const combined: Record<string, number> = {};
-  allocations.forEach((a: { bucket: string; percent: number }) => {
-    combined[a.bucket] = (combined[a.bucket] || 0) + (a.percent ?? 0);
+  allocations.forEach((a: { bucket: string; percent: number | string }) => {
+    combined[a.bucket] = (combined[a.bucket] || 0) + Number(a.percent ?? 0);
   });
   const normalizedAllocations = Object.entries(combined).map(([bucket, percent]) => ({ bucket, percent }));
 
