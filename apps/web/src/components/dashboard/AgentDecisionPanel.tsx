@@ -44,12 +44,19 @@ export default function AgentDecisionPanel({ decisionId, proposal, onExecuted, o
       // 2. If Freighter is installed, ask user to sign
       const freighterApi = await import("@stellar/freighter-api");
       if (await freighterApi.isConnected()) {
-        const signedXdr = await freighterApi.signTransaction(xdr, { network: "TESTNET" });
+        const signResult = await freighterApi.signTransaction(xdr, { 
+          networkPassphrase: "Test SDF Network ; September 2015" 
+        });
+        
+        if (signResult.error) {
+          throw new Error("Freighter signing failed: " + signResult.error);
+        }
+
         // 3. Submit to Stellar testnet
         const submitRes = await fetch("https://horizon-testnet.stellar.org/transactions", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: `tx=${encodeURIComponent(signedXdr)}`,
+          body: `tx=${encodeURIComponent(signResult.signedTxXdr)}`,
         });
         const submitData = await submitRes.json();
         if (!submitRes.ok) throw new Error("Stellar submission failed: " + (submitData.detail || "Unknown error"));

@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import AgentDecisionPanel from "./AgentDecisionPanel";
 import { useDashboardContext } from "@/hooks/DashboardContext";
-import type { DecisionRecord, AgentProposal } from "@/lib/ai/agent-engine";
+import type { AgentProposal } from "@/lib/ai/agent-engine";
+
+interface DecisionRecord {
+  id: string;
+  status: "pending" | "partial" | "executed" | "failed";
+  proposal_json: AgentProposal;
+}
 
 export default function AgentNotification() {
   const { profile, paymentEvents } = useDashboardContext();
