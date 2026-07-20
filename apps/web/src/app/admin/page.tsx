@@ -28,26 +28,27 @@ export default function AdminPage() {
   const [customSecret, setCustomSecret] = useState("");
   const [lastTx, setLastTx] = useState<{ hash: string; user: string } | null>(null);
 
+  const [history, setHistory] = useState<any[]>([]);
+
   useEffect(() => {
-    const stored = localStorage.getItem("MASTER_WALLET_SECRET");
-    if (stored) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMasterSecret(stored);
-      // We can't derive public key synchronously without stellar-sdk easily here unless we import Keypair
-      // But we can just use stellar-sdk if we add the import. For simplicity, we just fetch balances
-      // by first deriving the public key.
-      import("@stellar/stellar-sdk").then(({ Keypair }) => {
-        try {
-          const kp = Keypair.fromSecret(stored);
-          setMasterPublic(kp.publicKey());
-          getAccountBalances(kp.publicKey()).then(acc => {
+    // Fetch master wallet from API
+    fetch("/api/admin/wallet", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}` }
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.exists) {
+          setMasterSecret(d.secretKey);
+          setMasterPublic(d.publicKey);
+          getAccountBalances(d.publicKey).then(acc => {
             if (acc) setBalances(acc.balances);
           });
-        } catch {
-          console.error("Invalid secret in localStorage");
+          // Fetch history
+          fetch("/api/admin/history", {
+            headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}` }
+          }).then(r => r.json()).then(hd => setHistory(hd.history || []));
         }
       });
-    }
 
     fetch("/api/admin/users")
       .then(r => r.json())
@@ -60,18 +61,29 @@ export default function AdminPage() {
   const handleGenerateAndFund = async () => {
     setFunding(true);
     try {
-      const kp = generateKeypair();
-      const success = await fundTestnetAccount(kp.publicKey);
-      if (!success) throw new Error("Friendbot failed");
+      const res = await fetch("/api/admin/wallet", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}`
+        },
+        body: JSON.stringify({ action: "generate" })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
       
-      localStorage.setItem("MASTER_WALLET_SECRET", kp.secretKey);
-      setMasterSecret(kp.secretKey);
-      setMasterPublic(kp.publicKey);
+      setMasterSecret(data.secretKey);
+      setMasterPublic(data.publicKey);
       
       // Wait a moment for Horizon to index
       await new Promise(r => setTimeout(r, 2000));
-      const acc = await getAccountBalances(kp.publicKey);
+      const acc = await getAccountBalances(data.publicKey);
       if (acc) setBalances(acc.balances);
+
+      fetch("/api/admin/history", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}` }
+      }).then(r => r.json()).then(hd => setHistory(hd.history || []));
+
     } catch (err) {
       alert("Failed to initialize Master Wallet: " + (err as Error).message);
     } finally {
@@ -83,14 +95,27 @@ export default function AdminPage() {
     if (!customSecret.startsWith("S")) return alert("Invalid secret key. Must start with S.");
     setFunding(true);
     try {
-      const { Keypair } = await import("@stellar/stellar-sdk");
-      const kp = Keypair.fromSecret(customSecret);
-      localStorage.setItem("MASTER_WALLET_SECRET", kp.secret());
-      setMasterSecret(kp.secret());
-      setMasterPublic(kp.publicKey());
-      const acc = await getAccountBalances(kp.publicKey());
+      const res = await fetch("/api/admin/wallet", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}`
+        },
+        body: JSON.stringify({ action: "restore", secretKey: customSecret })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+
+      setMasterSecret(data.secretKey);
+      setMasterPublic(data.publicKey);
+      const acc = await getAccountBalances(data.publicKey);
       if (acc) setBalances(acc.balances);
       setCustomSecret("");
+
+      fetch("/api/admin/history", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}` }
+      }).then(r => r.json()).then(hd => setHistory(hd.history || []));
+
     } catch (err) {
       alert("Invalid secret key: " + (err as Error).message);
     } finally {
@@ -138,6 +163,11 @@ export default function AdminPage() {
       const acc = await getAccountBalances(masterPublic);
       if (acc) setBalances(acc.balances);
 
+      // Refresh history
+      fetch("/api/admin/history", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}` }
+      }).then(r => r.json()).then(hd => setHistory(hd.history || []));
+
     } catch (err) {
       console.error(err);
       alert("Payment failed: " + (err as Error).message);
@@ -161,7 +191,7 @@ export default function AdminPage() {
           {!masterSecret ? (
             <div>
               <p style={{ color: "var(--color-ink-300)", marginBottom: "16px" }}>
-                No Master Wallet found in localStorage. Generate one to act as the Employer/Admin, or restore an existing one.
+                No Master Wallet found. Generate one to act as the Employer/Admin, or restore an existing one.
               </p>
               <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
                 <button 
@@ -206,7 +236,16 @@ export default function AdminPage() {
               </div>
               <button 
                 className="btn btn-ghost" 
-                onClick={() => { localStorage.removeItem("MASTER_WALLET_SECRET"); setMasterSecret(""); }}
+                onClick={async () => {
+                  await fetch("/api/admin/wallet", {
+                    method: "DELETE",
+                    headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token") || ""}` }
+                  });
+                  setMasterSecret("");
+                  setMasterPublic("");
+                  setBalances([]);
+                  setHistory([]);
+                }}
                 style={{ fontSize: "0.875rem", padding: "6px 12px", border: "1px solid rgba(255,0,0,0.3)", color: "#ff6b6b" }}
               >
                 Disconnect Wallet
@@ -231,7 +270,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        <div className="card" style={{ padding: "32px" }}>
+        <div className="card" style={{ padding: "32px", marginBottom: "32px" }}>
           <h2 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: "16px" }}>Registered Users</h2>
           {users.length === 0 ? (
             <p style={{ color: "var(--color-ink-500)" }}>No users have connected a Stellar Wallet yet.</p>
@@ -255,6 +294,46 @@ export default function AdminPage() {
             </div>
           )}
         </div>
+
+        {/* History Section */}
+        {masterSecret && (
+          <div className="card" style={{ padding: "32px" }}>
+            <h2 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: "16px" }}>Admin Payment History</h2>
+            {history.length === 0 ? (
+              <p style={{ color: "var(--color-ink-500)" }}>No payments sent from this wallet yet.</p>
+            ) : (
+              <table style={{ width: "100%", textAlign: "left", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--color-border)" }}>
+                    <th style={{ padding: "12px", color: "var(--color-ink-300)", fontWeight: 500 }}>Date</th>
+                    <th style={{ padding: "12px", color: "var(--color-ink-300)", fontWeight: 500 }}>Recipient</th>
+                    <th style={{ padding: "12px", color: "var(--color-ink-300)", fontWeight: 500 }}>Amount</th>
+                    <th style={{ padding: "12px", color: "var(--color-ink-300)", fontWeight: 500 }}>Transaction</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map(item => (
+                    <tr key={item.id} style={{ borderBottom: "1px solid var(--color-border)" }}>
+                      <td style={{ padding: "12px" }}>{new Date(item.created_at).toLocaleString()}</td>
+                      <td style={{ padding: "12px" }}>{item.user_profiles?.full_name || item.user_profiles?.email || "Unknown"}</td>
+                      <td style={{ padding: "12px", color: "var(--color-jade)", fontWeight: 600 }}>{parseFloat(item.amount).toLocaleString()} {item.currency}</td>
+                      <td style={{ padding: "12px" }}>
+                        <a 
+                          href={`https://stellar.expert/explorer/testnet/tx/${item.tx_hash}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          style={{ color: "var(--color-saffron)", textDecoration: "underline" }}
+                        >
+                          {item.tx_hash.slice(0, 10)}...
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
