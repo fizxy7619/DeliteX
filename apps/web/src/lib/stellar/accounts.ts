@@ -25,6 +25,7 @@ import {
   HORIZON_URL,
   IS_TESTNET_MODE,
 } from "./config";
+import { Memo } from "@stellar/stellar-sdk";
 
 export interface StellarBalance {
   asset: string;
@@ -165,7 +166,7 @@ export async function sendPayment({
   );
 
   if (memo) {
-    txBuilder.addMemo({ memoType: "MemoText", value: memo } as never);
+    txBuilder.addMemo(Memo.text(memo));
   }
 
   const tx = txBuilder.setTimeout(30).build();
