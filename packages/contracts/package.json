@@ -1,0 +1,9 @@
+{
+  "name": "@delitex/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo 'TODO: Build smart contracts'",
+    "test": "echo 'TODO: Test smart contracts'"
+  }
+}

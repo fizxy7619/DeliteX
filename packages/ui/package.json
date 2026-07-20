@@ -1,0 +1,16 @@
+{
+  "name": "@delitex/ui",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./index.tsx",
+  "types": "./index.tsx",
+  "dependencies": {
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "typescript": "^5.0.0",
+    "@delitex/config-typescript": "workspace:*",
+    "@delitex/config-eslint": "workspace:*"
+  }
+}
