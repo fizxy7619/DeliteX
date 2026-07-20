@@ -1,7 +1,6 @@
 import { useState } from "react";
 import type { PaymentEvent } from "@/types/domain";
 import { useDashboardContext } from "@/hooks/DashboardContext";
-import { createClient } from "@/lib/supabase/client";
 
 function statusBadge(status: PaymentEvent["status"]) {
   const map = {

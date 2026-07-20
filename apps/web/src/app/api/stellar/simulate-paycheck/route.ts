@@ -65,8 +65,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true, txHash });
-  } catch (err: any) {
+  } catch (err) {
     console.error("Simulation error:", err);
-    return NextResponse.json({ error: err.message || "Simulation failed" }, { status: 500 });
+    return NextResponse.json({ error: (err as Error).message || "Simulation failed" }, { status: 500 });
   }
 }
