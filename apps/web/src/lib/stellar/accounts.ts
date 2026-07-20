@@ -135,6 +135,9 @@ export async function getAccountBalances(
 }
 
 // ─── Send a Stellar payment (testnet) ────────────────────────
+import { rpc, Contract, nativeToScVal, Asset } from "@stellar/stellar-sdk";
+import { SOROBAN_RPC_URL } from "./config";
+
 export async function sendPayment({
   senderSecret,
   destinationPublicKey,
@@ -157,21 +160,67 @@ export async function sendPayment({
     networkPassphrase: STELLAR_NETWORK_PASSPHRASE,
   });
 
-  txBuilder.addOperation(
-    Operation.payment({
-      destination: destinationPublicKey,
-      asset: STELLAR_ASSETS[asset],
-      amount,
-    })
-  );
+  const isContract = destinationPublicKey.startsWith("C");
+
+  if (isContract) {
+    if (asset !== "XLM") throw new Error("Only XLM to Soroban contracts is supported in this demo");
+    const nativeAsset = Asset.native().contractId(STELLAR_NETWORK_PASSPHRASE);
+    const contract = new Contract(nativeAsset);
+    // Convert string XLM amount to stroops (i128)
+    const stroops = BigInt(Math.floor(parseFloat(amount) * 10000000)).toString();
+
+    txBuilder.addOperation(
+      contract.call("transfer",
+        nativeToScVal(senderKeypair.publicKey(), { type: "address" }),
+        nativeToScVal(destinationPublicKey, { type: "address" }),
+        nativeToScVal(stroops, { type: "i128" })
+      )
+    );
+  } else {
+    txBuilder.addOperation(
+      Operation.payment({
+        destination: destinationPublicKey,
+        asset: STELLAR_ASSETS[asset],
+        amount,
+      })
+    );
+  }
 
   if (memo) {
     txBuilder.addMemo(Memo.text(memo));
   }
 
-  const tx = txBuilder.setTimeout(30).build();
+  let tx = txBuilder.setTimeout(30).build();
+
+  if (isContract) {
+    const sorobanServer = new rpc.Server(SOROBAN_RPC_URL);
+    tx = await sorobanServer.prepareTransaction(tx) as any;
+  }
+
   tx.sign(senderKeypair);
 
-  const result = await server.submitTransaction(tx);
-  return (result as Horizon.HorizonApi.SubmitTransactionResponse).hash;
+  if (isContract) {
+    const sorobanServer = new rpc.Server(SOROBAN_RPC_URL);
+    const sendRes = await sorobanServer.sendTransaction(tx);
+    if (sendRes.status === "ERROR") {
+      throw new Error("Soroban send failed");
+    }
+    
+    // Poll for completion
+    let status: string = sendRes.status;
+    let hash = sendRes.hash;
+    let attempts = 0;
+    while (status === "PENDING" && attempts < 10) {
+      await new Promise(r => setTimeout(r, 2000));
+      const txInfo = await sorobanServer.getTransaction(hash);
+      status = txInfo.status;
+      attempts++;
+    }
+    if (status !== "SUCCESS") throw new Error(`Soroban transaction failed with status: ${status}`);
+    return hash;
+  } else {
+    const result = await server.submitTransaction(tx);
+    return (result as Horizon.HorizonApi.SubmitTransactionResponse).hash;
+  }
 }
+

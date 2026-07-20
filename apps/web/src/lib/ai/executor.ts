@@ -34,8 +34,8 @@ function getServiceClient() {
   );
 }
 
-const VAULT_CONTRACT_ID = process.env.NEXT_PUBLIC_SOROBAN_VAULT || "GAHKWWI5WDKHZBODQTFEN7UGPSIGADKOOZD75ORL5NMGGN3EKBILZ7IU";
-const ROUTER_CONTRACT_ID = process.env.NEXT_PUBLIC_SOROBAN_ROUTER || "GDIWDCP4W3UPLA5L4BEDRELWEL5M6XKSU4C2S6RSY4JJATBNZODSPCPW";
+const VAULT_CONTRACT_ID = process.env.NEXT_PUBLIC_SOROBAN_VAULT || "CC7Z3ALJMFFI3ICBTLJQGZQTA3XPIWCEOSBO3TMQQD52A3FQFM6VLVYS";
+const ROUTER_CONTRACT_ID = process.env.NEXT_PUBLIC_SOROBAN_ROUTER || "CAKXHCLWKWLETL532QDVC7XHCMUSMMFJCA34IT5SJT2LDTKUMOH6WBRW";
 
 /**
  * Execute a single proposal item via real Stellar payment.
@@ -221,6 +221,26 @@ export async function executeDecision(decisionId: string, userId: string): Promi
         rail: "stellar",
         settled_at: new Date().toISOString(),
       });
+      
+      // If it's a savings deposit, update the user's savings vault balance
+      if (item.bucket === "savings") {
+        const { data: vault } = await supabase.from("savings_vaults").select("*").eq("user_id", userId).single();
+        if (vault) {
+          await supabase.from("savings_vaults").update({
+            total_value_usdc: Number(vault.total_value_usdc) + Number(item.amountUsdc)
+          }).eq("id", vault.id);
+        } else {
+          await supabase.from("savings_vaults").insert({
+            user_id: userId,
+            vault_name: "Soroban Yield Vault",
+            contract_address: VAULT_CONTRACT_ID,
+            strategy: "conservative",
+            total_value_usdc: Number(item.amountUsdc),
+            yield_earned_usdc: 0,
+            estimated_apy_percent: 5.25
+          });
+        }
+      }
     }
 
     itemResults.push({
