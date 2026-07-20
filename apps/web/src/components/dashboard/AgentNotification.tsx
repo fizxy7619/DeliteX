@@ -12,7 +12,7 @@ interface DecisionRecord {
 }
 
 export default function AgentNotification() {
-  const { profile, paymentEvents } = useDashboardContext();
+  const { profile, paymentEvents, refreshData } = useDashboardContext();
   const [pendingDecisionId, setPendingDecisionId] = useState<string | null>(null);
   const [pendingProposal, setPendingProposal] = useState<AgentProposal | null>(null);
   const [show, setShow] = useState(false);
@@ -57,9 +57,15 @@ export default function AgentNotification() {
         decisionId={pendingDecisionId}
         proposal={pendingProposal}
         onExecuted={() => {
-          setTimeout(() => setShow(false), 2000); // hide after 2s of showing success
+          setTimeout(() => {
+            setShow(false);
+            refreshData();
+          }, 2000);
         }}
-        onDismiss={() => setShow(false)}
+        onDismiss={() => {
+          fetch("/api/ai/dismiss", { method: "POST", body: JSON.stringify({ decisionId: pendingDecisionId }) });
+          setShow(false);
+        }}
       />
       <style>{`
         @keyframes slideInRight {

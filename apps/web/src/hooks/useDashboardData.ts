@@ -10,6 +10,7 @@ import type {
   AiMessage,
   UserProfile,
 } from "@/types/domain";
+import { fetchVaultBalance } from "@/lib/stellar/vault";
 
 export interface StellarAccountInfo {
   publicKey: string;
@@ -70,6 +71,11 @@ export function useDashboardData() {
         updatedAt: pData?.updated_at
       } as UserProfile);
 
+      let realVaultBalance = 0;
+      if (pData?.stellar_public_key) {
+        realVaultBalance = await fetchVaultBalance(pData.stellar_public_key);
+      }
+
       setPaymentEvents((peData || []).map((pe: any) => ({
         ...pe,
         userId: pe.user_id,
@@ -113,9 +119,10 @@ export function useDashboardData() {
 
       setVault(vData ? {
         ...vData,
+        id: vData.id,
         userId: vData.user_id,
         principalUsdc: vData.principal_usdc,
-        totalValueUsdc: vData.total_value_usdc,
+        totalValueUsdc: realVaultBalance > 0 ? realVaultBalance : vData.total_value_usdc,
         yieldEarnedUsdc: vData.yield_earned_usdc,
         estimatedApyPercent: vData.estimated_apy_percent,
         sorobanContractId: vData.soroban_contract_id,
@@ -123,6 +130,7 @@ export function useDashboardData() {
         autoDepositThresholdInr: vData.auto_deposit_threshold_inr,
         autoDepositEnabled: vData.auto_deposit_enabled,
         lastYieldClaimedAt: vData.last_yield_claimed_at,
+        createdAt: vData.created_at,
         updatedAt: vData.updated_at
       } : null);
 
