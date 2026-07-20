@@ -130,18 +130,22 @@ export async function buildExecutionXdr(decisionId: string, userId: string): Pro
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const preparedSimTx = (await rpcServer.prepareTransaction(simTx)) as any;
 
-    const finalBuilder = new TransactionBuilder(sourceAccount, { 
-      fee: preparedSimTx.fee, 
-      networkPassphrase: STELLAR_NETWORK_PASSPHRASE 
-    });
-    
-    finalBuilder.addOperation(sorobanOp);
-    for (const op of paymentOps) {
-      finalBuilder.addOperation(op);
+    if (paymentOps.length > 0) {
+      const finalBuilder = new TransactionBuilder(sourceAccount, { 
+        fee: preparedSimTx.fee, 
+        networkPassphrase: STELLAR_NETWORK_PASSPHRASE 
+      });
+      
+      finalBuilder.addOperation(sorobanOp);
+      for (const op of paymentOps) {
+        finalBuilder.addOperation(op);
+      }
+      
+      finalBuilder.setSorobanData(preparedSimTx.sorobanData);
+      return finalBuilder.setTimeout(300).build().toXDR();
+    } else {
+      return preparedSimTx.toXDR();
     }
-    
-    finalBuilder.setSorobanData(preparedSimTx.sorobanData);
-    return finalBuilder.setTimeout(300).build().toXDR();
   } else {
     const txBuilder = new TransactionBuilder(sourceAccount, {
       fee: BASE_FEE,
