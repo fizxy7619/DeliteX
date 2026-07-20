@@ -37,7 +37,7 @@ function getServiceClient() {
 const VAULT_CONTRACT_ID = process.env.NEXT_PUBLIC_SOROBAN_VAULT || "CAQFOWQLHE3BBOAGMJZNPCIASUOSJJCUQLJE6V6VSMW7H7ST4OOHD77C";
 
 
-import { TransactionBuilder, Operation, BASE_FEE, Asset, Contract, Address, nativeToScVal, rpc } from "@stellar/stellar-sdk";
+import { TransactionBuilder, Operation, BASE_FEE, Asset, Contract, Address, nativeToScVal, rpc, Account } from "@stellar/stellar-sdk";
 import { getHorizonServer, STELLAR_NETWORK_PASSPHRASE, SOROBAN_RPC_URL } from "@/lib/stellar/config";
 
 export async function buildExecutionXdr(decisionId: string, userId: string): Promise<string> {
@@ -120,7 +120,8 @@ export async function buildExecutionXdr(decisionId: string, userId: string): Pro
 
   // If there's a Soroban operation, simulate IT ALONE to get the footprint
   if (sorobanOp) {
-    const simTx = new TransactionBuilder(sourceAccount, { fee: BASE_FEE, networkPassphrase: STELLAR_NETWORK_PASSPHRASE })
+    const simAccount = new Account(sourceAccount.accountId(), sourceAccount.sequenceNumber());
+    const simTx = new TransactionBuilder(simAccount, { fee: BASE_FEE, networkPassphrase: STELLAR_NETWORK_PASSPHRASE })
       .addOperation(sorobanOp)
       .setTimeout(300)
       .build();
