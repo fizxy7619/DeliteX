@@ -50,10 +50,8 @@ export async function callLLM(
       temperature: opts?.temperature ?? 1,
       top_p: 0.95,
       max_tokens: opts?.maxTokens ?? 16384,
-      extra_body: {
-        chat_template_kwargs: { enable_thinking: true },
-        reasoning_budget: 16384,
-      },
+      chat_template_kwargs: { enable_thinking: true },
+      reasoning_budget: 16384,
       stream: false,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
