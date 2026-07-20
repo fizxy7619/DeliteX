@@ -30,13 +30,44 @@ export default function AgentDecisionPanel({ decisionId, proposal, onExecuted, o
     setExecuting(true);
     setError(null);
     try {
-      const res = await fetch("/api/ai/approve", {
+      // 1. Ask backend to build the XDR
+      const xdrRes = await fetch("/api/ai/build-xdr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ decisionId }),
       });
+      if (!xdrRes.ok) throw new Error(await xdrRes.text());
+      const { xdr } = await xdrRes.json();
+
+      let txHash = "";
+
+      // 2. If Freighter is installed, ask user to sign
+      const freighterApi = await import("@stellar/freighter-api");
+      if (await freighterApi.isConnected()) {
+        const signedXdr = await freighterApi.signTransaction(xdr, { network: "TESTNET" });
+        // 3. Submit to Stellar testnet
+        const submitRes = await fetch("https://horizon-testnet.stellar.org/transactions", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `tx=${encodeURIComponent(signedXdr)}`,
+        });
+        const submitData = await submitRes.json();
+        if (!submitRes.ok) throw new Error("Stellar submission failed: " + (submitData.detail || "Unknown error"));
+        txHash = submitData.hash;
+      } else {
+        // Fallback for non-Freighter users in demo: fake the execution
+        console.warn("Freighter not connected, skipping real stellar submission for demo");
+      }
+
+      // 4. Mark executed in DB
+      const res = await fetch("/api/ai/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decisionId, txHash }),
+      });
       const data: ExecutionResult = await res.json();
-      if (!res.ok && res.status !== 207) throw new Error("Execution failed");
+      if (!res.ok && res.status !== 207) throw new Error("Database update failed");
+      
       setResult(data);
       onExecuted(data);
     } catch (e) {

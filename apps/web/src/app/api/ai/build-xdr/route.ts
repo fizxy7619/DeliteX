@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { executeDecision } from "@/lib/ai/executor";
+import { buildExecutionXdr } from "@/lib/ai/executor";
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
@@ -19,7 +19,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "decisionId is required" }, { status: 400 });
   }
 
-  const result = await executeDecision(body.decisionId, user.id, body.txHash);
-
-  return NextResponse.json(result, { status: result.success ? 200 : 207 });
+  try {
+    const xdr = await buildExecutionXdr(body.decisionId, user.id);
+    return NextResponse.json({ xdr });
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+  }
 }

@@ -8,6 +8,7 @@ import BillsView from "@/components/dashboard/BillsView";
 import FamilyView from "@/components/dashboard/FamilyView";
 import SavingsView from "@/components/dashboard/SavingsView";
 import RulesEditor from "@/components/dashboard/RulesEditor";
+import AgentNotification from "@/components/dashboard/AgentNotification";
 import StellarView from "@/components/dashboard/StellarView";
 import AgentHistoryView from "@/components/dashboard/AgentHistoryView";
 import DemoBar from "@/components/dashboard/DemoBar";
@@ -176,6 +177,7 @@ function DashboardContent({ userEmail }: { userEmail: string }) {
   return (
     <div className="dashboard-theme" style={{ display: "flex", flexDirection: "column", minHeight: "100vh", position: "relative" }}>
       <ProceduralGroundBackground />
+      <AgentNotification />
       <DemoBar />
       <div style={{ display: "flex", flex: 1, backgroundColor: "transparent" }}>
         <Sidebar
