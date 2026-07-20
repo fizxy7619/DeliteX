@@ -64,4 +64,4 @@ jobs:
         
       - name: Contract Test
         run: cargo test
-        working-directory: packages/contracts
+        working-directory: contracts
