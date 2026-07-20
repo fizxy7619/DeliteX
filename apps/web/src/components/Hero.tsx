@@ -1,4 +1,4 @@
-
+import Link from "next/link";
 
 export default function Hero() {
   return (
@@ -88,12 +88,12 @@ export default function Hero() {
               marginBottom: "64px",
             }}
           >
-            <a href="#waitlist" className="btn btn-saffron btn-large">
-              Request early access
+            <Link href="/login" className="btn btn-saffron btn-large">
+              Get started
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
-            </a>
+            </Link>
             <a href="#how-it-works" className="btn btn-ghost btn-large">
               See how it works
             </a>

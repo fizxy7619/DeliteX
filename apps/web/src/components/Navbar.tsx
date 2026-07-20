@@ -58,10 +58,13 @@ export default function Navbar() {
         </nav>
 
         {/* CTA */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <a href="#waitlist" className="btn btn-primary hidden md:inline-flex" style={{ padding: "10px 22px", fontSize: "0.875rem" }}>
-            Join waitlist
-          </a>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <Link href="/login" className="hidden md:inline-block" style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--color-ink-700)", transition: "color 0.15s" }}>
+            Sign in
+          </Link>
+          <Link href="/login" className="btn btn-primary hidden md:inline-flex" style={{ padding: "10px 22px", fontSize: "0.875rem" }}>
+            Get started
+          </Link>
           {/* Mobile hamburger */}
           <button
             onClick={() => setOpen(!open)}
@@ -103,7 +106,7 @@ export default function Navbar() {
           <a href="#how-it-works" onClick={() => setOpen(false)} style={{ fontSize: "1rem", fontWeight: 500, color: "var(--color-ink-700)" }}>How it works</a>
           <a href="#features" onClick={() => setOpen(false)} style={{ fontSize: "1rem", fontWeight: 500, color: "var(--color-ink-700)" }}>Features</a>
           <a href="#faq" onClick={() => setOpen(false)} style={{ fontSize: "1rem", fontWeight: 500, color: "var(--color-ink-700)" }}>FAQ</a>
-          <a href="#waitlist" onClick={() => setOpen(false)} className="btn btn-primary" style={{ textAlign: "center" }}>Join waitlist</a>
+          <Link href="/login" onClick={() => setOpen(false)} className="btn btn-primary" style={{ textAlign: "center" }}>Get started</Link>
         </div>
       )}
     </header>
