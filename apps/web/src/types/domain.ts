@@ -14,7 +14,7 @@
 // ─────────────────────────────────────────────────────────────
 
 /** ISO 4217 currency codes we support */
-export type CurrencyCode = "USDC" | "EURC" | "USD" | "EUR" | "GBP" | "INR";
+export type CurrencyCode = "USDC" | "EURC" | "USD" | "EUR" | "GBP" | "INR" | "XLM";
 
 /** Fiat-settled or on-chain */
 export type SettlementRail = "stellar" | "upi" | "neft" | "imps" | "swift";
