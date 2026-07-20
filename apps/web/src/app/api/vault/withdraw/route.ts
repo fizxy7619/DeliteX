@@ -48,6 +48,15 @@ export async function POST(req: Request) {
       withdrawn_at: receipt.withdrawnAt,
     }).eq("id", positionId);
 
+    // Update savings_vaults
+    const { data: vault } = await supabase.from("savings_vaults").select("*").eq("user_id", user.id).single();
+    if (vault) {
+      await supabase.from("savings_vaults").update({
+        total_value_usdc: Math.max(0, Number(vault.total_value_usdc) - position.amount_usdc),
+        yield_earned_usdc: Number(vault.yield_earned_usdc) + receipt.yieldEarned
+      }).eq("id", vault.id);
+    }
+
     return NextResponse.json({ receipt });
   } catch (err) {
     console.error("[vault/withdraw] error:", err);

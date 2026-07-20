@@ -34,7 +34,6 @@ export function useDashboardData() {
   const [stellarAccount, setStellarAccount] = useState<StellarAccountInfo | null>(null);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
     setError(null);
     try {
       const { data: { user } } = await supabase.auth.getUser();

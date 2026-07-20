@@ -38,6 +38,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Rule not found or unauthorized" }, { status: 403 });
   }
 
+  if (isActive) {
+    await serviceSupabase
+      .from("allocation_rules")
+      .update({ is_active: false })
+      .eq("user_id", user.id);
+  }
+
   const { error } = await serviceSupabase
     .from("allocation_rules")
     .update({ is_active: isActive })
