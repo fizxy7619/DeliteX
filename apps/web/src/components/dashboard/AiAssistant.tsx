@@ -5,6 +5,12 @@ import { useState, useRef, useEffect, type FormEvent } from "react";
 import type { AiMessage } from "@/types/domain";
 import type { ParsedIntent } from "@/lib/ai/intent-parser";
 
+type DbAiMessage = AiMessage & {
+  parsed_rule?: { allocations: { bucket: string; percent: number }[] };
+  llm_model?: string;
+  llm_latency_ms?: number;
+};
+
 // ─── Intent Rule Card ─────────────────────────────────────────
 function IntentCard({
   intent,
@@ -90,19 +96,19 @@ function MessageBubble({ msg, pendingIntent, onApply, onDismiss }: {
         </div>
       </div>
 
-      {!isUser && (pendingIntent?.intent === "set_allocation" || (msg as any).parsed_rule) && onApply && onDismiss && (
+      {!isUser && (pendingIntent?.intent === "set_allocation" || (msg as DbAiMessage).parsed_rule) && onApply && onDismiss && (
         <div style={{ paddingLeft: "36px", width: "100%" }}>
           <IntentCard 
-            intent={pendingIntent ?? { intent: "set_allocation", allocations: (msg as any).parsed_rule.allocations, explanation: msg.content, source: "nvidia-nim", latencyMs: 0, confidence: 1 }} 
+            intent={pendingIntent ?? { intent: "set_allocation", allocations: (msg as DbAiMessage).parsed_rule?.allocations || [], explanation: msg.content, source: "nvidia-nim", latencyMs: 0, confidence: 1 }} 
             onApply={onApply} 
             onDismiss={onDismiss} 
           />
         </div>
       )}
 
-      {!isUser && (msg.llmModel || (msg as any).llm_model) && (
+      {!isUser && (msg.llmModel || (msg as DbAiMessage).llm_model) && (
         <p style={{ fontSize: "0.6875rem", color: "var(--color-ink-300)", paddingLeft: "36px", marginTop: "4px" }}>
-          {msg.llmModel || (msg as any).llm_model} · {msg.llmLatencyMs || (msg as any).llm_latency_ms}ms
+          {msg.llmModel || (msg as DbAiMessage).llm_model} · {msg.llmLatencyMs || (msg as DbAiMessage).llm_latency_ms}ms
         </p>
       )}
     </div>
@@ -127,8 +133,10 @@ export default function AiAssistant({ onPendingDecision }: { onPendingDecision?:
   
   useEffect(() => {
     if (aiMessages && aiMessages.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMessages(aiMessages);
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMessages([
         { id: "welcome", role: "assistant", content: "Hi! I'm your AI agent. I can help you automate payments or simulate testnet transactions. How can I help today?", createdAt: new Date().toISOString(), parsedRule: null, llmModel: null, llmLatencyMs: null }
       ]);
