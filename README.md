@@ -105,12 +105,13 @@ DeliteX/
 │       ├── src/types/             # Shared TypeScript domain models defining the Core OS logic
 │       └── src/lib/               # Integrations: Supabase Client, Stellar SDK logic, AI parsing
 │
+├── contracts/                     # Rust-based Soroban smart contracts
+│   ├── router/                    # On-chain payment splitting, parsing allocation rules natively
+│   ├── vault/                     # ERC-4626 style yield-generation vault interacting with Soroban Tokens
+│   ├── Cargo.toml                 # Workspace Cargo configuration
+│   └── scripts/                   # Testnet deployment automation (`deploy.js`)
+│
 ├── packages/
-│   ├── contracts/                 # Rust-based Soroban smart contracts
-│   │   ├── router/                # On-chain payment splitting, parsing allocation rules natively
-│   │   ├── vault/                 # ERC-4626 style yield-generation vault interacting with Soroban Tokens
-│   │   └── scripts/               # Testnet deployment automation (`deploy.js`)
-│   │
 │   ├── ui/                        # Shared UI components and layout foundations
 │   ├── config-eslint/             # Strict Monorepo ESLint configurations preventing impure hooks
 │   └── config-typescript/         # Monorepo TypeScript base configurations
