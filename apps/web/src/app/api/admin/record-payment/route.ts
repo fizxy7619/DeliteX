@@ -31,6 +31,35 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error;
 
+    // Trigger AI Agent to generate a proposal for this incoming payment
+    if (direction === "incoming" || bucket === "income") {
+      try {
+        const { generateProposal, saveDecision } = await import("@/lib/ai/agent-engine");
+        // amount is usually in XLM here, we treat it as USDC for the simulation or convert it.
+        // Let's assume the amount is USDC-equivalent for the proposal (e.g. 500)
+        // Wait, admin sends XLM. 1 XLM = $0.12 USDC. So amountUsdc = XLM * 0.12
+        const isXlm = (currency || "XLM").toUpperCase() === "XLM";
+        const parsedAmount = parseFloat(amount);
+        const amountUsdc = isXlm ? parsedAmount * 0.12 : parsedAmount;
+        
+        const proposal = await generateProposal(userId, amountUsdc, 84.5);
+        await saveDecision(userId, proposal);
+
+        // Notify via AI message
+        await supabaseAdmin.from("ai_chat_messages").insert([
+          {
+            user_id: userId,
+            role: "assistant",
+            content: `✦ I detected a new incoming payment of ${amount} ${currency || "XLM"}. I've prepared a new allocation proposal for you. Check the **Agent** tab to review and approve!`,
+            llm_model: "Agent Engine",
+            created_at: new Date().toISOString()
+          }
+        ]);
+      } catch (aiErr) {
+        console.error("Failed to trigger AI agent:", aiErr);
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("Failed to record payment:", err);

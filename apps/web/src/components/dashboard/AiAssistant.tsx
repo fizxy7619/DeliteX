@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo, type FormEvent } from "react";
-import type { AiMessage } from "@/types/domain";
+import type { AllocationRule, AiMessage } from "@/types/domain";
 import type { ParsedIntent } from "@/lib/ai/intent-parser";
 
 type DbAiMessage = AiMessage & {
@@ -10,19 +10,13 @@ type DbAiMessage = AiMessage & {
   llm_latency_ms?: number;
 };
 
-// ─── Intent Rule Card ─────────────────────────────────────────
-function IntentCard({
-  intent,
-  onApply,
-  onDismiss,
-}: {
-  intent: ParsedIntent;
-  onApply: () => void;
-  onDismiss: () => void;
-}) {
+// ─── Intent Card ──────────────────────────────────────────────
+function IntentCard({ intent, onApply, onDismiss, isAlreadyApplied }: { intent: ParsedIntent; onApply: () => void; onDismiss: () => void; isAlreadyApplied?: boolean }) {
   const [applying, setApplying] = useState(false);
-  const [applied, setApplied] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
+
+  // Derive applied state from props
+  const applied = isAlreadyApplied;
 
   async function handleApply() {
     if (intent.intent !== "set_allocation" || !intent.allocations) { onApply(); return; }
@@ -39,7 +33,6 @@ function IntentCard({
         }),
       });
       if (res.ok) {
-        setApplied(true);
         onApply();
       } else {
         const err = await res.json();
@@ -90,8 +83,10 @@ function IntentCard({
 }
 
 // ─── Message Bubble ───────────────────────────────────────────
-function MessageBubble({ msg, pendingIntent, isDismissed, onApply, onDismiss }: {
+function MessageBubble({ msg, activeRule, isLatestIntent, pendingIntent, isDismissed, onApply, onDismiss }: {
   msg: AiMessage;
+  activeRule?: AllocationRule;
+  isLatestIntent?: boolean;
   pendingIntent?: ParsedIntent | null;
   isDismissed?: boolean;
   onApply?: () => void;
@@ -99,6 +94,13 @@ function MessageBubble({ msg, pendingIntent, isDismissed, onApply, onDismiss }: 
 }) {
   const isUser = msg.role === "user";
   const dbMsg = msg as DbAiMessage;
+  
+  const isAlreadyApplied = useMemo(() => {
+    if (!activeRule || !dbMsg.parsed_rule) return false;
+    const sortedActive = [...activeRule.allocations].sort((a,b) => a.bucket.localeCompare(b.bucket));
+    const sortedParsed = [...dbMsg.parsed_rule.allocations].sort((a,b) => a.bucket.localeCompare(b.bucket));
+    return JSON.stringify(sortedActive) === JSON.stringify(sortedParsed);
+  }, [activeRule, dbMsg.parsed_rule]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start", marginBottom: "14px" }}>
@@ -113,12 +115,13 @@ function MessageBubble({ msg, pendingIntent, isDismissed, onApply, onDismiss }: 
         </div>
       </div>
 
-      {!isUser && !isDismissed && (pendingIntent?.intent === "set_allocation" || dbMsg.parsed_rule) && onApply && onDismiss && (
+      {!isUser && !isDismissed && isLatestIntent && (pendingIntent?.intent === "set_allocation" || dbMsg.parsed_rule) && onApply && onDismiss && (
         <div style={{ paddingLeft: "36px", width: "100%" }}>
           <IntentCard
             intent={(pendingIntent ?? { intent: "set_allocation", allocations: dbMsg.parsed_rule?.allocations || [], explanation: msg.content, source: "nvidia-nim", latencyMs: 0, confidence: 1 }) as ParsedIntent}
             onApply={onApply}
             onDismiss={onDismiss}
+            isAlreadyApplied={isAlreadyApplied}
           />
         </div>
       )}
@@ -145,13 +148,22 @@ const SUGGESTIONS = [
 import { useDashboardContext } from "@/hooks/DashboardContext";
 
 export default function AiAssistant({ onPendingDecision }: { onPendingDecision?: (id: string) => void }) {
-  const { aiMessages, refreshData } = useDashboardContext();
+  const { aiMessages, rules, refreshData } = useDashboardContext();
+  const activeRule = useMemo(() => rules.find(r => r.isActive), [rules]);
 
   const displayMessages = useMemo(() => {
     return aiMessages && aiMessages.length > 0
       ? aiMessages
       : [{ id: "welcome", role: "assistant", content: "Hi! I'm your Delite AI Agent powered by NVIDIA Nemotron-4-340B.\n\nI can help you:\n• Set allocation rules (e.g. \"Allocate 30% to savings, 20% to family\")\n• Answer questions about your FX rates and fees\n• Simulate incoming payments to test your rules\n\nHow can I help today?", createdAt: new Date().toISOString(), parsedRule: null, llmModel: null, llmLatencyMs: null } as DbAiMessage];
   }, [aiMessages]);
+
+  const latestIntentMessageId = useMemo(() => {
+    for (let i = displayMessages.length - 1; i >= 0; i--) {
+      const msg = displayMessages[i] as DbAiMessage;
+      if (msg.parsed_rule) return msg.id;
+    }
+    return null;
+  }, [displayMessages]);
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -262,6 +274,8 @@ export default function AiAssistant({ onPendingDecision }: { onPendingDecision?:
           <MessageBubble
             key={msg.id}
             msg={msg}
+            activeRule={activeRule}
+            isLatestIntent={msg.id === latestIntentMessageId}
             isDismissed={dismissedRules.includes(msg.id)}
             pendingIntent={dismissedRules.includes(msg.id) ? null : undefined}
             onApply={() => {
