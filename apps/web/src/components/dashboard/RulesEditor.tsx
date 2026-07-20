@@ -1,3 +1,5 @@
+"use client";
+
 import { useDashboardContext } from "@/hooks/DashboardContext";
 import { useState } from "react";
 
