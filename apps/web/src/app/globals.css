@@ -326,7 +326,7 @@ a {
   --color-ink-500: rgba(255, 255, 255, 0.6);
   --color-ink-300: rgba(255, 255, 255, 0.4);
   color: #ffffff;
-  background-color: var(--color-bg);
+  background-color: transparent;
 }
 
 .dashboard-theme .divider {

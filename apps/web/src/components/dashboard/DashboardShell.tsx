@@ -12,6 +12,7 @@ import StellarView from "@/components/dashboard/StellarView";
 import AgentHistoryView from "@/components/dashboard/AgentHistoryView";
 import DemoBar from "@/components/dashboard/DemoBar";
 import ProfileView from "@/components/dashboard/ProfileView";
+import ProceduralGroundBackground from "@/components/ui/ProceduralGroundBackground";
 import { DashboardProvider, useDashboardContext } from "@/hooks/DashboardContext";
 import {
   StellarWalletsKit,
@@ -108,9 +109,10 @@ function DashboardContent({ userEmail }: { userEmail: string }) {
   }
 
   return (
-    <div className="dashboard-theme" style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+    <div className="dashboard-theme" style={{ display: "flex", flexDirection: "column", minHeight: "100vh", position: "relative" }}>
+      <ProceduralGroundBackground />
       <DemoBar />
-      <div style={{ display: "flex", flex: 1, backgroundColor: "var(--color-bg)" }}>
+      <div style={{ display: "flex", flex: 1, backgroundColor: "transparent" }}>
         <Sidebar
           activeSection={activeSection}
           onNavigate={setActiveSection}
