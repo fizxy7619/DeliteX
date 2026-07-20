@@ -22,10 +22,12 @@ function IntentCard({
 }) {
   const [applying, setApplying] = useState(false);
   const [applied, setApplied] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
 
   async function handleApply() {
     if (intent.intent !== "set_allocation" || !intent.allocations) { onApply(); return; }
     setApplying(true);
+    setApplyError(null);
     try {
       const res = await fetch("/api/ai/apply-rule", {
         method: "POST",
@@ -36,8 +38,18 @@ function IntentCard({
           aiPrompt: `Auto-applied from: ${intent.explanation}`,
         }),
       });
-      if (res.ok) { setApplied(true); onApply(); }
-    } finally { setApplying(false); }
+      if (res.ok) {
+        setApplied(true);
+        onApply();
+      } else {
+        const err = await res.json();
+        setApplyError(err.error || "Failed to apply rule");
+      }
+    } catch (e) {
+      setApplyError((e as Error).message);
+    } finally {
+      setApplying(false);
+    }
   }
 
   const bucketColors: Record<string, string> = {
@@ -58,6 +70,9 @@ function IntentCard({
           ))}
         </div>
       )}
+      {applyError && (
+        <p style={{ fontSize: "0.75rem", color: "#C0392B", marginBottom: "8px" }}>Error: {applyError}</p>
+      )}
       {!applied ? (
         <div style={{ display: "flex", gap: "8px" }}>
           <button onClick={handleApply} disabled={applying} style={{ padding: "6px 14px", borderRadius: "6px", border: "none", backgroundColor: "var(--color-jade)", color: "#fff", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-body)" }}>
@@ -68,7 +83,7 @@ function IntentCard({
           </button>
         </div>
       ) : (
-        <p style={{ fontSize: "0.8125rem", color: "var(--color-jade)", fontWeight: 600 }}>✓ Rule applied!</p>
+        <p style={{ fontSize: "0.8125rem", color: "var(--color-jade)", fontWeight: 600 }}>✓ Rule applied to your allocation!</p>
       )}
     </div>
   );
@@ -83,6 +98,8 @@ function MessageBubble({ msg, pendingIntent, isDismissed, onApply, onDismiss }: 
   onDismiss?: () => void;
 }) {
   const isUser = msg.role === "user";
+  const dbMsg = msg as DbAiMessage;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: isUser ? "flex-end" : "flex-start", marginBottom: "14px" }}>
       <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", flexDirection: isUser ? "row-reverse" : "row" }}>
@@ -91,24 +108,24 @@ function MessageBubble({ msg, pendingIntent, isDismissed, onApply, onDismiss }: 
             ✦
           </div>
         )}
-        <div style={{ maxWidth: "75%", padding: "11px 15px", borderRadius: isUser ? "16px 16px 4px 16px" : "16px 16px 16px 4px", backgroundColor: isUser ? "var(--color-jade)" : "var(--color-bg-card)", color: isUser ? "#fff" : "var(--color-ink-700)", fontSize: "0.875rem", lineHeight: 1.65, border: isUser ? "none" : "1px solid var(--color-border)", boxShadow: isUser ? "none" : "0 1px 3px rgba(0,0,0,0.04)" }}>
+        <div style={{ maxWidth: "75%", padding: "11px 15px", borderRadius: isUser ? "16px 16px 4px 16px" : "16px 16px 16px 4px", backgroundColor: isUser ? "var(--color-jade)" : "var(--color-bg-card)", color: isUser ? "#fff" : "var(--color-ink-700)", fontSize: "0.875rem", lineHeight: 1.65, border: isUser ? "none" : "1px solid var(--color-border)", boxShadow: isUser ? "none" : "0 1px 3px rgba(0,0,0,0.04)", whiteSpace: "pre-wrap" }}>
           {msg.content}
         </div>
       </div>
 
-      {!isUser && !isDismissed && (pendingIntent?.intent === "set_allocation" || (msg as DbAiMessage).parsed_rule) && onApply && onDismiss && (
+      {!isUser && !isDismissed && (pendingIntent?.intent === "set_allocation" || dbMsg.parsed_rule) && onApply && onDismiss && (
         <div style={{ paddingLeft: "36px", width: "100%" }}>
-          <IntentCard 
-            intent={(pendingIntent ?? { intent: "set_allocation", allocations: (msg as DbAiMessage).parsed_rule?.allocations || [], explanation: msg.content, source: "nvidia-nim", latencyMs: 0, confidence: 1 }) as ParsedIntent} 
-            onApply={onApply} 
-            onDismiss={onDismiss} 
+          <IntentCard
+            intent={(pendingIntent ?? { intent: "set_allocation", allocations: dbMsg.parsed_rule?.allocations || [], explanation: msg.content, source: "nvidia-nim", latencyMs: 0, confidence: 1 }) as ParsedIntent}
+            onApply={onApply}
+            onDismiss={onDismiss}
           />
         </div>
       )}
 
-      {!isUser && (msg.llmModel || (msg as DbAiMessage).llm_model) && (
+      {!isUser && (msg.llmModel || dbMsg.llm_model) && (
         <p style={{ fontSize: "0.6875rem", color: "var(--color-ink-300)", paddingLeft: "36px", marginTop: "4px" }}>
-          {msg.llmModel || (msg as DbAiMessage).llm_model} · {msg.llmLatencyMs || (msg as DbAiMessage).llm_latency_ms}ms
+          {msg.llmModel || dbMsg.llm_model} · {msg.llmLatencyMs || dbMsg.llm_latency_ms}ms
         </p>
       )}
     </div>
@@ -118,8 +135,8 @@ function MessageBubble({ msg, pendingIntent, isDismissed, onApply, onDismiss }: 
 // ─── Suggestions ──────────────────────────────────────────────
 const SUGGESTIONS = [
   "Allocate 30% to savings",
+  "Send 20% to family",
   "Pay bills first (40%)",
-  "Send 15% to family",
   "What are my FX fees?",
   "Simulate incoming payment",
 ];
@@ -129,16 +146,16 @@ import { useDashboardContext } from "@/hooks/DashboardContext";
 
 export default function AiAssistant({ onPendingDecision }: { onPendingDecision?: (id: string) => void }) {
   const { aiMessages, refreshData } = useDashboardContext();
-  
-  // Create a combined message list that shows the default welcome if no DB messages exist
+
   const displayMessages = useMemo(() => {
-    return aiMessages && aiMessages.length > 0 
-      ? aiMessages 
-      : [{ id: "welcome", role: "assistant", content: "Hi! I'm your AI agent. I can help you automate payments or simulate testnet transactions. How can I help today?", createdAt: new Date().toISOString(), parsedRule: null, llmModel: null, llmLatencyMs: null } as DbAiMessage];
+    return aiMessages && aiMessages.length > 0
+      ? aiMessages
+      : [{ id: "welcome", role: "assistant", content: "Hi! I'm your Delite AI Agent powered by NVIDIA Nemotron-4-340B.\n\nI can help you:\n• Set allocation rules (e.g. \"Allocate 30% to savings, 20% to family\")\n• Answer questions about your FX rates and fees\n• Simulate incoming payments to test your rules\n\nHow can I help today?", createdAt: new Date().toISOString(), parsedRule: null, llmModel: null, llmLatencyMs: null } as DbAiMessage];
   }, [aiMessages]);
-    
+
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [dismissedRules, setDismissedRules] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -148,6 +165,7 @@ export default function AiAssistant({ onPendingDecision }: { onPendingDecision?:
     if (!text.trim() || loading) return;
     setLoading(true);
     setInput("");
+    setApiError(null);
 
     // Check for simulation intent before hitting LLM
     if (text.toLowerCase().includes("simulat") || text.toLowerCase().includes("test payment") || text.toLowerCase().includes("incoming")) {
@@ -157,35 +175,53 @@ export default function AiAssistant({ onPendingDecision }: { onPendingDecision?:
     }
 
     try {
-      await fetch("/api/ai/parse-intent", {
+      const res = await fetch("/api/ai/parse-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text }),
       });
 
-      // Refresh to fetch the real DB records
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        if (res.status === 401) {
+          setApiError("Session expired — please refresh the page and log in again.");
+        } else {
+          setApiError(errData.error || `Request failed (${res.status})`);
+        }
+        return;
+      }
+
+      // Refresh to show DB messages (both user msg + assistant reply)
       await refreshData();
-      // Error is handled and logged if needed. The real DB messages remain visible.
+    } catch (e) {
+      setApiError("Network error: " + (e as Error).message);
     } finally {
       setLoading(false);
     }
   }
 
   async function handleSimulate() {
-    setLoading(true);
+    setApiError(null);
     try {
       const res = await fetch("/api/ai/propose", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amountUsdc: 500, fxRate: 84.5 }),
       });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        setApiError(errData.error || "Simulation failed");
+        return;
+      }
+
       const data = await res.json();
-      if (res.ok && onPendingDecision) {
+      if (data.decisionId && onPendingDecision) {
         onPendingDecision(data.decisionId);
       }
       await refreshData();
-    } finally {
-      setLoading(false);
+    } catch (e) {
+      setApiError("Simulation failed: " + (e as Error).message);
     }
   }
 
@@ -208,9 +244,17 @@ export default function AiAssistant({ onPendingDecision }: { onPendingDecision?:
       <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "9px 14px", backgroundColor: "#F0FDF4", borderRadius: "8px", border: "1px solid rgba(43,122,90,0.25)" }}>
         <span style={{ fontSize: "1rem" }}>✦</span>
         <p style={{ fontSize: "0.8125rem", color: "#166534", lineHeight: 1.5 }}>
-          <strong>NVIDIA Nemotron-4-340B</strong> via NIM API · Structured JSON output · Falls back to keyword matching if key not set
+          <strong>NVIDIA Nemotron-4-340B</strong> via NIM API · Structured JSON output · Falls back to keyword matching if API key not set
         </p>
       </div>
+
+      {/* API Error */}
+      {apiError && (
+        <div style={{ padding: "12px 16px", borderRadius: "8px", backgroundColor: "#FEF2F2", border: "1px solid rgba(192,57,43,0.3)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <p style={{ fontSize: "0.8125rem", color: "#C0392B" }}>⚠ {apiError}</p>
+          <button onClick={() => setApiError(null)} style={{ background: "none", border: "none", color: "#C0392B", cursor: "pointer", fontSize: "1rem" }}>×</button>
+        </div>
+      )}
 
       {/* Chat window */}
       <div style={{ minHeight: "360px", maxHeight: "500px", overflowY: "auto", border: "1px solid var(--color-border)", borderRadius: "12px", padding: "20px", backgroundColor: "var(--color-bg)", display: "flex", flexDirection: "column" }}>
@@ -220,7 +264,10 @@ export default function AiAssistant({ onPendingDecision }: { onPendingDecision?:
             msg={msg}
             isDismissed={dismissedRules.includes(msg.id)}
             pendingIntent={dismissedRules.includes(msg.id) ? null : undefined}
-            onApply={() => setDismissedRules((prev) => [...prev, msg.id])}
+            onApply={() => {
+              setDismissedRules((prev) => [...prev, msg.id]);
+              refreshData();
+            }}
             onDismiss={() => setDismissedRules((prev) => [...prev, msg.id])}
           />
         ))}
@@ -249,8 +296,18 @@ export default function AiAssistant({ onPendingDecision }: { onPendingDecision?:
 
       {/* Input */}
       <form onSubmit={handleSubmit} style={{ display: "flex", gap: "10px" }}>
-        <input type="text" className="input" placeholder='Try "Allocate 30% to savings" or "Simulate incoming payment"' value={input} onChange={(e) => setInput(e.target.value)} disabled={loading} style={{ flex: 1 }} />
-        <button type="submit" className="btn btn-saffron" disabled={loading || !input.trim()} style={{ flexShrink: 0 }}>Send</button>
+        <input
+          type="text"
+          className="input"
+          placeholder='Try "Allocate 30% to savings" or "Simulate incoming payment"'
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          disabled={loading}
+          style={{ flex: 1 }}
+        />
+        <button type="submit" className="btn btn-saffron" disabled={loading || !input.trim()} style={{ flexShrink: 0 }}>
+          Send
+        </button>
       </form>
 
       <style>{`

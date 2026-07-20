@@ -5,7 +5,8 @@
  */
 import OpenAI from "openai";
 
-export const NVIDIA_MODEL = "nvidia/nemotron-3-super-120b-a12b";
+// Correct model ID for NVIDIA Nemotron-4-340B via NIM API
+export const NVIDIA_MODEL = "nvidia/nemotron-4-340b-instruct";
 export const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
 
 export interface ChatMessage {
@@ -23,9 +24,12 @@ export interface LLMResponse {
 let _client: OpenAI | null = null;
 
 function getClient(): OpenAI | null {
+  const apiKey = process.env.NVIDIA_API_KEY;
+  if (!apiKey) return null;
+
   if (!_client) {
     _client = new OpenAI({
-      apiKey: process.env.NVIDIA_API_KEY,
+      apiKey,
       baseURL: NVIDIA_BASE_URL,
     });
   }
@@ -47,14 +51,11 @@ export async function callLLM(
     const completion = await client.chat.completions.create({
       model: NVIDIA_MODEL,
       messages,
-      temperature: opts?.temperature ?? 1,
-      top_p: 0.95,
-      max_tokens: opts?.maxTokens ?? 16384,
-      chat_template_kwargs: { enable_thinking: true },
-      reasoning_budget: 16384,
+      temperature: opts?.temperature ?? 0.1,
+      top_p: 0.7,
+      max_tokens: opts?.maxTokens ?? 1024,
       stream: false,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    });
 
     const content = completion.choices[0]?.message?.content ?? "";
     return {

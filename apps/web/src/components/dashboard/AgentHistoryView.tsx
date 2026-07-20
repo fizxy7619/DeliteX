@@ -219,8 +219,18 @@ export default function AgentHistoryView() {
                                 <span>{BUCKET_ICONS[item.bucket] ?? "•"}</span>
                                 <div>
                                   <p style={{ fontSize: "0.8125rem", color: "var(--color-ink-700)" }}>{item.description}</p>
-                                  {item.tx_hash && (
-                                    <p style={{ fontSize: "0.7rem", color: "var(--color-ink-300)", fontFamily: "monospace", marginTop: "2px" }}>{item.tx_hash}</p>
+                                  {item.tx_hash && !item.tx_hash.startsWith("pending_") && !item.tx_hash.startsWith("income_hold") && (
+                                    <a
+                                      href={`https://stellar.expert/explorer/testnet/tx/${item.tx_hash}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      style={{ fontSize: "0.7rem", color: "var(--color-saffron)", fontFamily: "monospace", marginTop: "2px", textDecoration: "underline", display: "block" }}
+                                    >
+                                      {item.tx_hash.slice(0, 20)}... ↗
+                                    </a>
+                                  )}
+                                  {item.tx_hash?.startsWith("income_hold") && (
+                                    <p style={{ fontSize: "0.7rem", color: "var(--color-ink-300)", marginTop: "2px" }}>Held in wallet</p>
                                   )}
                                 </div>
                               </div>

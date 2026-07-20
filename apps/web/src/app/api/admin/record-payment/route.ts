@@ -11,6 +11,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { userId, amount, currency, counterparty, description, txHash, bucket, direction } = body;
 
+    if (!userId || !amount || !txHash) {
+      return NextResponse.json({ error: "userId, amount, and txHash are required" }, { status: 400 });
+    }
+
     const { error } = await supabaseAdmin.from("payment_events").insert({
       user_id: userId,
       direction: direction || "incoming",
@@ -20,8 +24,9 @@ export async function POST(request: NextRequest) {
       currency: currency || "XLM",
       counterparty: counterparty,
       description: description,
-      stellar_tx_hash: txHash,
+      stellar_tx_hash: txHash,   // Correct column name (not tx_hash)
       rail: "stellar",
+      settled_at: new Date().toISOString(),
     });
 
     if (error) throw error;

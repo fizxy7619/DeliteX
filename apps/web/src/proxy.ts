@@ -1,3 +1,17 @@
+/**
+ * Supabase Auth Proxy/Middleware for Next.js App Router (Next.js 16)
+ *
+ * This is THE critical file that keeps Supabase sessions alive.
+ * In Next.js 16 with Turbopack, this file is named proxy.ts (not middleware.ts).
+ *
+ * It intercepts every non-API request, refreshes the session cookie if expired,
+ * and enforces route-level auth guards.
+ *
+ * Without this file working correctly:
+ *  - Sessions expire on Vercel (server-side getUser() returns null)
+ *  - Every protected API route returns 401
+ *  - AI agent, rules toggle, dashboard data — ALL fail silently
+ */
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -30,15 +44,23 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Refresh session if expired — required for Server Components
+  // IMPORTANT: Always use getUser() to validate JWT server-side, never getSession()
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
 
-  // Protect /app/* routes — redirect to /login if not authenticated
+  // Protect /app/* routes — redirect unauthenticated users to /login
   if (pathname.startsWith("/app") && !user) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.searchParams.set("redirectTo", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Protect /admin route — require authentication
+  if (pathname.startsWith("/admin") && !user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("redirectTo", pathname);
@@ -58,11 +80,12 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
+     * Match all request paths except for:
      * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * - _next/image (image optimization)
+     * - favicon.ico
      * - api/ (API routes handle their own auth)
+     * - public assets (svg, png, jpg, etc.)
      */
     "/((?!_next/static|_next/image|favicon.ico|api/).*)",
   ],

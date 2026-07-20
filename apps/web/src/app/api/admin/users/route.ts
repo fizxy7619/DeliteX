@@ -7,11 +7,12 @@ export async function GET() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Fetch all users who have a stellar_public_key linked
+  // Fetch all users who have a stellar_public_key linked, including email
   const { data, error } = await supabaseAdmin
     .from("user_profiles")
-    .select("id, full_name, stellar_public_key")
-    .not("stellar_public_key", "is", null);
+    .select("id, email, full_name, stellar_public_key")
+    .not("stellar_public_key", "is", null)
+    .neq("stellar_public_key", "");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

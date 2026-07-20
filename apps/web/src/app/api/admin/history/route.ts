@@ -27,19 +27,20 @@ export async function GET(request: Request) {
 
     if (!wallet) return NextResponse.json({ history: [] });
 
-    // Fetch all payment events where the admin wallet was the counterparty
+    // Fetch payment events where admin wallet was the counterparty (= outgoing paychecks)
     const { data: events, error } = await serviceSupabase
       .from("payment_events")
       .select(`
-        id, amount, currency, tx_hash, created_at, user_id,
+        id, amount, currency, stellar_tx_hash, created_at, user_id,
         user_profiles ( full_name, email )
       `)
       .eq("counterparty", wallet.public_key)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(50);
 
     if (error) throw error;
 
-    return NextResponse.json({ history: events });
+    return NextResponse.json({ history: events ?? [] });
   } catch (err: unknown) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }

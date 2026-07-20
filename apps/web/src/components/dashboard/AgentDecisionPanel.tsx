@@ -88,7 +88,18 @@ export default function AgentDecisionPanel({ decisionId, proposal, onExecuted, o
                 <p style={{ fontSize: "0.75rem", color: "var(--color-ink-400)" }}>${item.amountUsdc} · {item.percent}%</p>
                 {executedItem && (
                   <p style={{ fontSize: "0.7rem", marginTop: "2px", color: executedItem.status === "executed" ? "var(--color-jade)" : "#C0392B", fontWeight: 600 }}>
-                    {executedItem.status === "executed" ? `✓ ${executedItem.txHash?.slice(0, 16)}…` : `✗ Failed`}
+                    {executedItem.status === "executed" ? (
+                      (executedItem as { txHash?: string; explorerUrl?: string }).explorerUrl ? (
+                        <a
+                          href={(executedItem as { txHash?: string; explorerUrl?: string }).explorerUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: "var(--color-jade)", textDecoration: "underline" }}
+                        >
+                          ✓ View on Explorer ↗
+                        </a>
+                      ) : `✓ ${executedItem.txHash?.slice(0, 16)}…`
+                    ) : `✗ ${executedItem.error || "Failed"}`}
                   </p>
                 )}
               </div>
@@ -121,7 +132,7 @@ export default function AgentDecisionPanel({ decisionId, proposal, onExecuted, o
             </button>
           </div>
           <p style={{ fontSize: "0.75rem", color: "var(--color-ink-300)", marginTop: "10px" }}>
-            Testnet only · x402 + Onramp stubs · No real money moved
+            Stellar Testnet · All transactions verifiable on stellar.expert ↗
           </p>
         </>
       )}
