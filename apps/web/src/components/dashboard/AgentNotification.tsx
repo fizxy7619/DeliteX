@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import AgentDecisionPanel from "./AgentDecisionPanel";
 import { useDashboardContext } from "@/hooks/DashboardContext";
-import type { DecisionRecord } from "@/lib/ai/agent-engine";
+import type { DecisionRecord, AgentProposal } from "@/lib/ai/agent-engine";
 
 export default function AgentNotification() {
   const { profile, paymentEvents } = useDashboardContext();
   const [pendingDecisionId, setPendingDecisionId] = useState<string | null>(null);
-  const [pendingProposal, setPendingProposal] = useState<any>(null);
+  const [pendingProposal, setPendingProposal] = useState<AgentProposal | null>(null);
   const [show, setShow] = useState(false);
 
   // When payment events update, check for any pending decisions
