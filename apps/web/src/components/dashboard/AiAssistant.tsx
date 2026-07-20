@@ -4,7 +4,6 @@
 import { useState, useRef, useEffect, type FormEvent } from "react";
 import type { AiMessage } from "@/types/domain";
 import type { ParsedIntent } from "@/lib/ai/intent-parser";
-import { MOCK_AI_MESSAGES } from "@/lib/mock-data";
 
 // ─── Intent Rule Card ─────────────────────────────────────────
 function IntentCard({
@@ -116,8 +115,13 @@ const SUGGESTIONS = [
 ];
 
 // ─── Main Component ───────────────────────────────────────────
+import { useDashboardContext } from "@/hooks/DashboardContext";
+
 export default function AiAssistant({ onPendingDecision }: { onPendingDecision?: (id: string) => void }) {
-  const [messages, setMessages] = useState<AiMessage[]>(MOCK_AI_MESSAGES);
+  const { aiMessages } = useDashboardContext();
+  const [messages, setMessages] = useState<AiMessage[]>(aiMessages.length ? aiMessages : [
+    { id: "welcome", role: "assistant", content: "Hi! I'm your AI agent. I can help you automate payments or simulate testnet transactions. How can I help today?", createdAt: new Date().toISOString(), parsedRule: null, llmModel: null, llmLatencyMs: null }
+  ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   // Store latest parsed intent per message (keyed by message id)

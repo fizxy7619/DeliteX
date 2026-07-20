@@ -44,48 +44,12 @@ export async function GET(request: NextRequest) {
 
   const fundParam = request.nextUrl.searchParams.get("fund") === "true";
 
-  // If no Stellar key yet: generate + fund (testnet only)
+  // If no Stellar key yet: return 404 so UI prompts connection
   if (!profile?.stellar_public_key) {
-    if (!IS_TESTNET_MODE) {
-      return NextResponse.json(
-        { error: "No Stellar account linked. Connect your wallet first." },
-        { status: 404 }
-      );
-    }
-
-    // Generate keypair
-    const { publicKey, secretKey } = generateKeypair();
-
-    // Fund via Friendbot
-    const funded = await fundTestnetAccount(publicKey);
-    if (!funded) {
-      return NextResponse.json({ error: "Friendbot funding failed" }, { status: 502 });
-    }
-
-    // Establish USDC trustline
-    // NOTE: In production, the user signs this tx client-side.
-    // In testnet we use a server-side keypair for simplicity.
-    try {
-      await establishTrustlines(secretKey, ["USDC"]);
-    } catch {
-      // Non-fatal: trustline may fail if USDC issuer not available on testnet
-      console.warn("Trustline setup failed — proceeding without it");
-    }
-
-    // Persist public key to profile (NEVER persist secret key server-side in prod)
-    await supabase
-      .from("user_profiles")
-      .update({ stellar_public_key: publicKey })
-      .eq("id", user.id);
-
-    const accountInfo = await getAccountBalances(publicKey);
-    return NextResponse.json({
-      publicKey,
-      accountInfo,
-      isNew: true,
-      isTestnet: IS_TESTNET_MODE,
-      warning: "Secret key NOT stored server-side. Fund via Friendbot only on testnet.",
-    });
+    return NextResponse.json(
+      { error: "No Stellar account linked. Connect your wallet first." },
+      { status: 404 }
+    );
   }
 
   // Existing account — fund on demand
