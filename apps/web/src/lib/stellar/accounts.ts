@@ -194,6 +194,7 @@ export async function sendPayment({
 
   if (isContract) {
     const sorobanServer = new rpc.Server(SOROBAN_RPC_URL);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tx = await sorobanServer.prepareTransaction(tx) as any;
   }
 
@@ -208,7 +209,7 @@ export async function sendPayment({
     
     // Poll for completion
     let status: string = sendRes.status;
-    let hash = sendRes.hash;
+    const hash = sendRes.hash;
     let attempts = 0;
     while (status === "PENDING" && attempts < 10) {
       await new Promise(r => setTimeout(r, 2000));

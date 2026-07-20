@@ -116,7 +116,6 @@ async function executeItem(
   // Execute real Stellar payment via the /api/stellar/pay endpoint
   try {
     const { sendPayment } = await import("@/lib/stellar/accounts");
-    const { Keypair } = await import("@stellar/stellar-sdk");
 
     // Look up agent wallet secret key from admin_wallets (agent-side wallet)
     // For user execution, we need the user's own wallet — but we don't store user private keys

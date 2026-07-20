@@ -113,7 +113,7 @@ export default function AdminPage() {
     };
 
     init();
-  }, [authChecked]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [authChecked]);
 
   const handleGenerateAndFund = async () => {
     setFunding(true);
