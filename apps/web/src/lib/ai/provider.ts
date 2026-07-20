@@ -25,7 +25,7 @@ let _client: OpenAI | null = null;
 function getClient(): OpenAI | null {
   if (!_client) {
     _client = new OpenAI({
-      apiKey: process.env.NVIDIA_API_KEY || "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",
+      apiKey: process.env.NVIDIA_API_KEY || "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",
       baseURL: NVIDIA_BASE_URL,
     });
   }
