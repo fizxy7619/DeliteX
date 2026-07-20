@@ -20,7 +20,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "allocations array is required" }, { status: 400 });
   }
 
-  const total = allocations.reduce((s: number, a: { percent: number }) => s + (a.percent ?? 0), 0);
+  let total = allocations.reduce((s: number, a: { percent: number }) => s + (a.percent ?? 0), 0);
+  
+  // Auto-fill remainder to 'income' bucket
+  if (total < 100) {
+    const existingIncome = allocations.find((a: any) => a.bucket === "income");
+    if (existingIncome) {
+      existingIncome.percent += (100 - total);
+    } else {
+      allocations.push({ bucket: "income", percent: 100 - total });
+    }
+    total = 100;
+  }
+
   if (total !== 100) {
     return NextResponse.json({ error: `Allocations must sum to 100%, got ${total}%` }, { status: 422 });
   }

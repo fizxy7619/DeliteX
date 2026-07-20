@@ -401,8 +401,8 @@ export default function StellarView() {
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {[
-            { name: "Router Contract", id: process.env.NEXT_PUBLIC_SOROBAN_ROUTER ?? "Not deployed", desc: "Splits incoming payments per AllocationRule" },
-            { name: "Vault Contract", id: process.env.NEXT_PUBLIC_SOROBAN_VAULT ?? "Not deployed", desc: "ERC-4626 USDC yield vault" },
+            { name: "Router Contract", id: process.env.NEXT_PUBLIC_SOROBAN_ROUTER ?? "CAKXHCLWKWLETL532QDVC7XHCMUSMMFJCA34IT5SJT2LDTKUMOH6WBRW", desc: "Splits incoming payments per AllocationRule" },
+            { name: "Vault Contract", id: process.env.NEXT_PUBLIC_SOROBAN_VAULT ?? "CC7Z3ALJMFFI3ICBTLJQGZQTA3XPIWCEOSBO3TMQQD52A3FQFM6VLVYS", desc: "ERC-4626 USDC yield vault" },
           ].map((c) => (
             <div key={c.name} style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -429,8 +429,8 @@ export default function StellarView() {
           <button 
             className="btn btn-primary"
             onClick={sendTestAllocation}
-            disabled={txStatus === "pending" || !process.env.NEXT_PUBLIC_SOROBAN_ROUTER}
-            style={{ width: "100%", opacity: (!process.env.NEXT_PUBLIC_SOROBAN_ROUTER || txStatus === "pending") ? 0.5 : 1 }}
+            disabled={txStatus === "pending"}
+            style={{ width: "100%", opacity: txStatus === "pending" ? 0.5 : 1 }}
           >
             {txStatus === "pending" ? "Allocating..." : "Execute Agent Allocation"}
           </button>
